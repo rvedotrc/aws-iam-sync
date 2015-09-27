@@ -20,18 +20,32 @@ var doConditionalUpdate = function (iam, key, gotDetail, wantDetail) {
     if (gotDetail.Path !== '/') {
         throw "Unable to deal with policy "+key+" with path "+gotDetail.Path;
     } else if (deepEqual(activePolicy, wantDetail)) {
-        console.log("Nothing to update for role", key);
+        // console.log("Nothing to update for role", key);
         return Q(true);
     } else {
         console.log("Update role", key);
         // TODO respect dryRun
-        // TODO: deal with whatever error we get from > 5 policy versions
-        return AwsDataUtils.collectFromAws(iam, "createPolicyVersion", {
-            PolicyArn: gotDetail.Arn,
-            PolicyDocument: JSON.stringify(wantDetail),
-            SetAsDefault: true
-        });
+        return deleteAllInactivePolicyVersions(iam, gotDetail)
+            .then(function () {
+                return AwsDataUtils.collectFromAws(iam, "createPolicyVersion", {
+                    PolicyArn: gotDetail.Arn,
+                    PolicyDocument: JSON.stringify(wantDetail),
+                    SetAsDefault: true
+                });
+            });
     }
+};
+
+var deleteAllInactivePolicyVersions = function (iam, gotPolicy) {
+    return Q.all(
+        gotPolicy.PolicyVersionList.filter(function (pv) {
+            return !pv.IsDefaultVersion;
+        }).map(function (pv) {
+            return Q.all([ gotPolicy.Arn, pv.VersionId ]).spread(function (arn, versionId) {
+                return AwsDataUtils.collectFromAws(iam, "deletePolicyVersion", { PolicyArn: arn, VersionId: versionId });
+            });
+        })
+    );
 };
 
 var doCreateUpdate = function (iam, wanted, got) {
@@ -60,8 +74,24 @@ var doCreateUpdate = function (iam, wanted, got) {
     return Q.all(promises);
 };
 
+var doDeleteRole = function (iam, gotPolicy) {
+    console.log("Delete unwanted role " + gotPolicy.PolicyName);
+    // TODO respect dryRun
+
+    return deleteAllInactivePolicyVersions(iam, gotPolicy)
+        .then(function () {
+            return AwsDataUtils.collectFromAws(iam, "deletePolicy", { PolicyArn: gotPolicy.Arn });
+        });
+};
+
 var doDelete = function (iam, wanted, got) {
-    console.log("TODO, delete unwanted inScope roles");
+    return Q.all(
+        Object.keys(got.PolicyMap).filter(function (n) {
+            return !isOutOfScope(n) && !wanted[n];
+        }).map(function (n) {
+            return Q.all([ iam, got.PolicyMap[n] ]).spread(doDeleteRole);
+        })
+    );
 };
 
 module.exports = {
