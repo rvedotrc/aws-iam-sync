@@ -17,12 +17,33 @@ Q.all([ wantedRoles, wantedPolicies ])
         var got = iam.then(IAMCollector.getAccountAuthorizationDetails);
         var gotMapped = got.then(IAMCollector.mapAccountAuthorizationDetails);
 
-        var addRoles = Q.all([ iam, wantedPolicies, gotMapped ]).spread(PolicyWriter.doCreateUpdate);
+        var addPolicies = Q.all([ iam, wantedPolicies, gotMapped ]).spread(PolicyWriter.doCreateUpdate);
+        var addRoles = addPolicies.then(function () {
+            return Q(null);
+        });
+        var addGroups = addPolicies.then(function () {
+            return Q(null);
+        });
+        var addUsers = Q.all([ addPolicies, addGroups ]).then(function () {
+            return Q(null);
+        });
 
-        return addRoles
-            .then(function () {
+        var doWrites = Q.all([ addPolicies, addRoles, addGroups, addUsers ]);
+
+        var doCleanup = doWrites.then(function () {
+            var delRoles = Q(null);
+            var delUsers = Q(null);
+            var delGroups = delUsers.then(function () {
+                return Q(null);
+            });
+            var deletePolicies = Q.all([ delRoles, delUsers, delGroups ]).then(function () {
                 return Q.all([ iam, wantedPolicies, gotMapped ]).spread(PolicyWriter.doDelete);
             });
+
+            return Q.all([ delPolicies, delRoles, delGroups, delUsers ]);
+        });
+
+        return doWrites.then(doCleanup);
     })
     .done();
 
