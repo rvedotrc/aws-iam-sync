@@ -5,16 +5,16 @@ var makeMap = function (list, keyFunc) {
     }, {});
 };
 
-var sync = function (want, got, keyFunc) {
+var equal = function (x, y, equalFunc) {
+    return(equalFunc ? equalFunc(x, y) : (x === y));
+};
+
+var sync = function (want, got, keyFunc, equalFunc) {
 
     var wantKeys = makeMap(want, keyFunc);
     var gotKeys = makeMap(got, keyFunc);
 
-    var ans = {
-        create: [],
-        update: [],
-        delete: []
-    };
+    var ans = {};
 
     ans.create = Object.keys(wantKeys)
         .filter(function (k) { return !Object.hasOwnProperty.apply(gotKeys, [k]); })
@@ -25,6 +25,12 @@ var sync = function (want, got, keyFunc) {
         .filter(function (k) { return !Object.hasOwnProperty.apply(wantKeys, [k]); })
         .sort()
         .map(function (k) { return gotKeys[k]; });
+
+    ans.update = Object.keys(wantKeys)
+        .filter(function (k) { return Object.hasOwnProperty.apply(gotKeys, [k]); })
+        .filter(function (k) { return !equal(gotKeys[k], wantKeys[k], equalFunc);  })
+        .sort()
+        .map(function (k) { return { got: gotKeys[k], want: wantKeys[k] }; });
 
     return ans;
 };
