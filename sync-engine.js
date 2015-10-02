@@ -36,6 +36,12 @@ var sync = function (want, got, idFunc, equalFunc) {
         .sort()
         .map(function (k) { return { got: gotMap[k], want: wantMap[k] }; });
 
+    ans.noop = Object.keys(wantMap)
+        .filter(function (k) { return Object.hasOwnProperty.apply(gotMap, [k]); })
+        .filter(function (k) { return equal(gotMap[k], wantMap[k], equalFunc);  })
+        .sort()
+        .map(function (k) { return { got: gotMap[k], want: wantMap[k] }; });
+
     return ans;
 };
 

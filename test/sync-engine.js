@@ -16,6 +16,7 @@ describe('SyncEngine', function () {
             ans,
             {
                 create: [ "at", "random" ],
+                noop: [ { want: "words", got: "words" } ],
                 update: [],
                 delete: [ "more" ]
             }
@@ -40,6 +41,12 @@ describe('SyncEngine', function () {
             ans,
             {
                 create: [ { UserName: 'alice' } ],
+                noop: [
+                    {
+                        want: { UserName: 'bob' },
+                        got: { UserName: 'bob' }
+                    }
+                ],
                 update: [],
                 delete: [ { UserName: 'flea' } ]
             }
@@ -63,6 +70,12 @@ describe('SyncEngine', function () {
             ans,
             {
                 create: [],
+                noop: [
+                    {
+                        want: { UserName: 'bob', Age: 3, Id: 123 },
+                        got: { UserName: 'bob', Age: 3, Id: 987 }
+                    }
+                ],
                 update: [
                     {
                         want: { UserName: 'alice', Age: 12, Id: 36435 },
