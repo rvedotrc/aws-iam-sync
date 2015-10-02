@@ -1,6 +1,10 @@
 var makeMap = function (list, idFunc) {
     return list.reduce(function (p, ele) {
-        p[ idFunc ? idFunc(ele) : ele ] = ele;
+        var key = idFunc ? idFunc(ele) : ele;
+        if (Object.hasOwnProperty.apply(p, [key])) {
+            throw "Duplicate ID '"+key+"' detected in got/want list";
+        }
+        p[key] = ele;
         return p;
     }, {});
 };

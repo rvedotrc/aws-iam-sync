@@ -74,4 +74,36 @@ describe('SyncEngine', function () {
         );
     });
 
+    it('throws on id collision', function () {
+        assert.throws(function () {
+            SyncEngine.sync(
+                [ "a", "b", "c", "b" ],
+                []
+            );
+        }, /Duplicate ID 'b'/);
+
+        assert.throws(function () {
+            SyncEngine.sync(
+                [],
+                [ "a", "b", "c", "b" ]
+            );
+        }, /Duplicate ID 'b'/);
+
+        assert.throws(function () {
+            SyncEngine.sync(
+                [ { name: 'bob' }, { name: 'bear' } ],
+                [],
+                function (o) { return 'x'; }
+            );
+        }, /Duplicate ID 'x'/);
+
+        assert.throws(function () {
+            SyncEngine.sync(
+                [],
+                [ { name: 'bob' }, { name: 'bear' } ],
+                function (o) { return 'x'; }
+            );
+        }, /Duplicate ID 'x'/);
+    });
+
 });
