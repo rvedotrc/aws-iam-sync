@@ -1,13 +1,15 @@
-var checkConsistency = function (roles, policies) {
+var checkConsistency = function (roles, policies, users, groups) {
     console.log("roles =", roles);
     console.log("policies =", policies);
+    console.log("users =", users);
+    console.log("groups =", groups);
 
     // Check that each policy referenced by a role is one that has been
     // defined
     var badPolicies = {};
     Object.keys(roles).map(function (r) {
-        roles[r].policies.map(function (p) {
-            if (!policies["modav."+p]) badPolicies[p] = true;
+        roles[r].AttachedManagedPolicies.map(function (p) {
+            if (!policies[p.PolicyName]) badPolicies[p] = true;
         });
     });
 
