@@ -23,4 +23,26 @@ describe('SyncEngine', function () {
 
     });
 
+    it('syncs lists of objects', function () {
+        var ans = SyncEngine.sync(
+            [
+                { UserName: 'alice' },
+                { UserName: 'bob' }
+            ], [
+                { UserName: 'bob' },
+                { UserName: 'flea' }
+            ],
+            function (o) { return o.UserName; }
+        );
+
+        assert.deepEqual(
+            ans,
+            {
+                create: [ { UserName: 'alice' } ],
+                update: [],
+                delete: [ { UserName: 'flea' } ]
+            }
+        );
+    });
+
 });

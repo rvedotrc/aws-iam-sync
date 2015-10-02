@@ -1,14 +1,14 @@
-var makeMap = function (keys) {
-    return keys.reduce(function (p, k) {
-        p[k] = true;
+var makeMap = function (list, keyFunc) {
+    return list.reduce(function (p, ele) {
+        p[ keyFunc ? keyFunc(ele) : ele ] = ele;
         return p;
     }, {});
 };
 
-var sync = function (want, got, wantKeyFunc, gotKeyFunc) {
+var sync = function (want, got, keyFunc) {
 
-    var wantKeys = makeMap(want);
-    var gotKeys = makeMap(got);
+    var wantKeys = makeMap(want, keyFunc);
+    var gotKeys = makeMap(got, keyFunc);
 
     var ans = {
         create: [],
@@ -17,11 +17,14 @@ var sync = function (want, got, wantKeyFunc, gotKeyFunc) {
     };
 
     ans.create = Object.keys(wantKeys)
-        .filter(function (k) { return !gotKeys[k]; })
-        .sort();
+        .filter(function (k) { return !Object.hasOwnProperty.apply(gotKeys, [k]); })
+        .sort()
+        .map(function (k) { return wantKeys[k]; });
+
     ans.delete = Object.keys(gotKeys)
-        .filter(function (k) { return !wantKeys[k]; })
-        .sort();
+        .filter(function (k) { return !Object.hasOwnProperty.apply(wantKeys, [k]); })
+        .sort()
+        .map(function (k) { return gotKeys[k]; });
 
     return ans;
 };
