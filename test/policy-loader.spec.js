@@ -19,7 +19,7 @@ describe('PolicyLoader', function () {
     });
 
     it('loads from an empty directory', function (mochaDone) {
-        var stub = sandbox.stub(fs, "readdir").withArgs(dir).yields(null, []);
+        sandbox.stub(fs, "readdir").withArgs(dir).yields(null, []);
         PolicyLoader.getWanted()
             .then(function (ans) {
                 assert.deepEqual(ans, []);
@@ -29,10 +29,10 @@ describe('PolicyLoader', function () {
     });
 
     it('loads policies', function (mochaDone) {
-        var stub = sandbox.stub(fs, "readdir").withArgs(dir).yields(null, ['b.json', 'a.json']);
+        sandbox.stub(fs, "readdir").withArgs(dir).yields(null, ['b.json', 'a.json']);
 
         var docA = { Statement: ["go", "here"], Version: "2012-10-17" };
-        var stubA = sandbox.stub(fs, 'readFile').withArgs(dir+'/a.json').yields(null, JSON.stringify(docA));
+        sandbox.stub(fs, 'readFile').withArgs(dir+'/a.json').yields(null, JSON.stringify(docA));
         var expectedA = {
             PolicyName: "modav.a",
             Path: "/",
@@ -41,7 +41,7 @@ describe('PolicyLoader', function () {
         };
 
         var docB = { Statement: ["and", "here"], Version: "2012-10-17" };
-        var stubB = stubA.withArgs(dir+'/b.json').yields(null, JSON.stringify(docB));
+        fs.readFile.withArgs(dir+'/b.json').yields(null, JSON.stringify(docB));
         var expectedB = {
             PolicyName: "modav.b",
             Path: "/",
