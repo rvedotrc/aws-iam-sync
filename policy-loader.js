@@ -21,7 +21,7 @@ var getWanted = function () {
     return Q.nfcall(fs.readdir, "wanted/policies")
         .then(function (names) {
             return Q.all(
-                names.map(loadPolicyFile)
+                names.sort().map(loadPolicyFile)
             );
         });
 };
