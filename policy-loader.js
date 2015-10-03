@@ -1,12 +1,14 @@
 var Q = require('q');
 var fs = require('fs');
 
+var dir = 'wanted/policies';
+
 var isGoodFilename = function (filename) {
     return filename.match(/^\w+\.json$/);
 };
 
 var loadPolicyFile = function (filename) {
-    return Q.nfcall(fs.readFile, "wanted/policies/"+filename)
+    return Q.nfcall(fs.readFile, dir+"/"+filename)
         .then(function (content) {
             return {
                 PolicyName: policyFilenameToPolicyName(filename),
@@ -22,7 +24,7 @@ var policyFilenameToPolicyName = function (n) {
 };
 
 var getWanted = function () {
-    return Q.nfcall(fs.readdir, "wanted/policies")
+    return Q.nfcall(fs.readdir, dir)
         .then(function (names) {
             return Q.all(
                 names.filter(isGoodFilename).sort().map(loadPolicyFile)
@@ -31,5 +33,6 @@ var getWanted = function () {
 };
 
 module.exports = {
+    dir: dir,
     getWanted: getWanted
 };
