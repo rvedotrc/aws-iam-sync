@@ -5,6 +5,8 @@ var uniq = require('uniq');
 
 var DefaultsExander = require('./defaults-expander');
 
+var dir = 'wanted/roles';
+
 var assumeLiveWormhole = {
         "Statement": [
           {
@@ -19,8 +21,12 @@ var assumeLiveWormhole = {
         "Version": "2012-10-17"
       };
 
+var isGoodFilename = function (filename) {
+    return filename.match(/^\w+\.json$/);
+};
+
 var loadRolesFile = function (filename) {
-    return Q.nfcall(fs.readFile, "wanted/roles/"+filename)
+    return Q.nfcall(fs.readFile, dir+"/"+filename)
         .then(function (content) {
             return DefaultsExander.expand(JSON.parse(content));
         });
@@ -56,22 +62,21 @@ var mergeRolesLists = function (rolesLists) {
 };
 
 var transformRoles = function (map) {
-    return Object.keys(map).reduce(function (h, k) {
-        h[k] = {
+    return Object.keys(map).sort().map(function (k) {
+        return {
             RoleName: map[k].name,
             Path: map[k].path,
             AssumeRolePolicyDocument: assumeLiveWormhole,
-            AttachedManagedPolicies: map[k].policies.map(function (pn) { return { PolicyName: "modav."+pn }; })
+            attachedManagedPolicies: map[k].policies.map(function (pn) { return { PolicyName: "modav."+pn }; })
         };
-        return h;
-    }, {});
+    });
 };
 
 var getWanted = function () {
-    return Q.nfcall(fs.readdir, "wanted/roles")
+    return Q.nfcall(fs.readdir, dir)
         .then(function (names) {
             return Q.all(
-                names.map(loadRolesFile)
+                names.filter(isGoodFilename).map(loadRolesFile)
             )
             .then(mergeRolesLists)
             .then(transformRoles);
@@ -79,5 +84,7 @@ var getWanted = function () {
 };
 
 module.exports = {
+    dir: dir,
+    assumeLiveWormhole: assumeLiveWormhole,
     getWanted: getWanted
 };
