@@ -60,7 +60,7 @@ describe('PolicyLoader', function () {
     it('ignores things that are not called something.json', function (mochaDone) {
         sandbox.stub(fs, 'readFile').throws();
 
-        sandbox.stub(fs, "readdir").withArgs(dir).yields(null, ['a.txt']);
+        sandbox.stub(fs, "readdir").withArgs(dir).yields(null, ['a.txt', 'some-thing.json']);
 
         PolicyLoader.getWanted()
             .then(function (ans) {
