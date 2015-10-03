@@ -56,4 +56,17 @@ describe('PolicyLoader', function () {
             .done();
     });
 
+    it('ignores things that are not called something.json', function (mochaDone) {
+        sandbox.stub(fs, 'readFile').throws();
+
+        sandbox.stub(fs, "readdir").withArgs('wanted/policies').yields(null, ['a.txt']);
+
+        PolicyLoader.getWanted()
+            .then(function (ans) {
+                assert.deepEqual(ans, []);
+                mochaDone();
+            })
+            .done();
+    });
+
 });
