@@ -3,7 +3,7 @@ var fs = require('fs');
 var merge = require('merge');
 var uniq = require('uniq');
 
-var DefaultsExander = require('./defaults-expander');
+var DefaultsExpander = require('./defaults-expander');
 
 var dir = 'wanted/roles';
 
@@ -28,7 +28,7 @@ var isGoodFilename = function (filename) {
 var loadRolesFile = function (filename) {
     return Q.nfcall(fs.readFile, dir+"/"+filename)
         .then(function (content) {
-            return DefaultsExander.expand(JSON.parse(content));
+            return DefaultsExpander.expand(JSON.parse(content));
         });
 };
 
