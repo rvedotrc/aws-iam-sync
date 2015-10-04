@@ -107,4 +107,24 @@ describe('RolesLoader', function () {
             .done();
     });
 
+    it('throws on path conflict for a role', function (mochaDone) {
+        givenFiles({
+            'a.json': [
+                { name: 'r1', path: '/p1/', policies: [ 'x', 'y' ] }
+            ],
+            'b.json': [
+                { name: 'r1', path: '/p2/', policies: [ 'z', 'x', 'y' ] }
+            ]
+        });
+
+        RolesLoader.getWanted()
+            .then(function (ans) {
+                throw 'expected failure';
+            }, function (err) {
+                assert.equal(err, 'path mismatch for r1');
+                mochaDone();
+            })
+            .done();
+    });
+
 });
