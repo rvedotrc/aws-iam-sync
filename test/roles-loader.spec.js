@@ -47,6 +47,7 @@ describe('RolesLoader', function () {
             attachedManagedPolicies: [
                 { PolicyName: 'modav.team' }
             ],
+            inlinePolicies: [],
         };
 
         var specB = [ { name: 'Bob', path: '/team/', policies: [ 'team' ] } ];
@@ -57,6 +58,7 @@ describe('RolesLoader', function () {
             attachedManagedPolicies: [
                 { PolicyName: 'modav.team' }
             ],
+            inlinePolicies: [],
         };
 
         givenFiles({

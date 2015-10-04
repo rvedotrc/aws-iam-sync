@@ -67,7 +67,8 @@ var transformRoles = function (map) {
             RoleName: map[k].name,
             Path: map[k].path,
             AssumeRolePolicyDocument: assumeLiveWormhole,
-            attachedManagedPolicies: map[k].policies.map(function (pn) { return { PolicyName: "modav."+pn }; })
+            attachedManagedPolicies: map[k].policies.map(function (pn) { return { PolicyName: "modav."+pn }; }),
+            inlinePolicies: [],
         };
     });
 };
