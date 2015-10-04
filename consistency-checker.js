@@ -1,8 +1,17 @@
+var CanonicalJson = require('canonical-json');
+
 var checkConsistency = function (roles, policies, users, groups) {
+    console.log(CanonicalJson({
+        policies: policies,
+        roles: roles,
+        groups: groups,
+        users: users,
+    }, null, 2));
+
     // Check that each policy referenced by a role/user/group is one that has
     // been defined
     var badPolicies = {};
-    [ roles, users, groups ].each(function (items) {
+    [ roles, users, groups ].map(function (items) {
         items.map(function (i) {
             i.attachedManagedPolicies.map(function (wantPolicy) {
                 if (!policies.some(function (p) { return p.PolicyName === wantPolicy.PolicyName; })) {
