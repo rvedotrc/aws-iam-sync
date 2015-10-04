@@ -1,20 +1,33 @@
 var checkConsistency = function (roles, policies, users, groups) {
-    console.log("roles =", roles);
-    console.log("policies =", policies);
-    console.log("users =", users);
-    console.log("groups =", groups);
-
-    // Check that each policy referenced by a role is one that has been
-    // defined
+    // Check that each policy referenced by a role/user/group is one that has
+    // been defined
     var badPolicies = {};
-    Object.keys(roles).map(function (r) {
-        roles[r].AttachedManagedPolicies.map(function (p) {
-            if (!policies[p.PolicyName]) badPolicies[p] = true;
+    [ roles, users, groups ].each(function (items) {
+        items.map(function (i) {
+            i.attachedManagedPolicies.map(function (wantPolicy) {
+                if (!policies.some(function (p) { return p.PolicyName === wantPolicy.PolicyName; })) {
+                    badPolicies[wantPolicy.PolicyName] = true;
+                }
+            });
         });
     });
 
     if (Object.keys(badPolicies).length > 0) {
-        throw "The following policies are referenced by roles but not defined: " + JSON.stringify( Object.keys(badPolicies).sort() );
+        throw "The following policies are referenced by roles/users/groups but not defined: " + JSON.stringify( Object.keys(badPolicies).sort() );
+    }
+
+    // Check that each group referenced by a user is one that has been defined
+    var badGroups = {};
+    users.map(function (i) {
+        i.groups.map(function (wantGroup) {
+            if (!groups.some(function (g) { return g.GroupName === wantGroup.GroupName; })) {
+                badGroups[wantGroup.GroupName] = true;
+            }
+        });
+    });
+
+    if (Object.keys(badGroups).length > 0) {
+        throw "The following groups are referenced by users but not defined: " + JSON.stringify( Object.keys(badGroups).sort() );
     }
 };
 
