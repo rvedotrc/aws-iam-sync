@@ -18,8 +18,18 @@ describe('RolesLoader', function () {
         sandbox.restore();
     });
 
+    var givenFiles = function (fileMap) {
+        sandbox.stub(fs, "readdir").withArgs(dir).yields(null, Object.keys(fileMap));
+        var s = sandbox.stub(fs, "readFile");
+
+        Object.keys(fileMap).map(function (filename) {
+            s.withArgs(dir+'/'+filename).yields(null, JSON.stringify(fileMap[filename]));
+        });
+    };
+
     it('loads from an empty directory', function (mochaDone) {
-        sandbox.stub(fs, "readdir").withArgs(dir).yields(null, []);
+        givenFiles({});
+
         RolesLoader.getWanted()
             .then(function (ans) {
                 assert.deepEqual(ans, []);
@@ -29,10 +39,7 @@ describe('RolesLoader', function () {
     });
 
     it('loads roles', function (mochaDone) {
-        sandbox.stub(fs, "readdir").withArgs(dir).yields(null, ['b.json', 'a.json']);
-
         var specA = [ { name: 'Alice', path: '/team/', policies: [ 'team' ] } ];
-        sandbox.stub(fs, 'readFile').withArgs(dir+'/a.json').yields(null, JSON.stringify(specA));
         var expectedA = {
             RoleName: "Alice",
             Path: "/team/",
@@ -43,7 +50,6 @@ describe('RolesLoader', function () {
         };
 
         var specB = [ { name: 'Bob', path: '/team/', policies: [ 'team' ] } ];
-        fs.readFile.withArgs(dir+'/b.json').yields(null, JSON.stringify(specB));
         var expectedB = {
             RoleName: "Bob",
             Path: "/team/",
@@ -52,6 +58,11 @@ describe('RolesLoader', function () {
                 { PolicyName: 'modav.team' }
             ],
         };
+
+        givenFiles({
+            'b.json': specB,
+            'a.json': specA
+        });
 
         RolesLoader.getWanted()
             .then(function (ans) {
