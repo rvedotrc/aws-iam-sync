@@ -85,4 +85,26 @@ describe('RolesLoader', function () {
             .done();
     });
 
+    it('merges policies for each role', function (mochaDone) {
+        givenFiles({
+            'a.json': [
+                { name: 'r1', path: '/p/', policies: [ 'x', 'y' ] }
+            ],
+            'b.json': [
+                { name: 'r1', path: '/p/', policies: [ 'z', 'x', 'y' ] }
+            ]
+        });
+
+        RolesLoader.getWanted()
+            .then(function (ans) {
+                assert.deepEqual(ans[0].attachedManagedPolicies, [
+                    { PolicyName: 'modav.x' },
+                    { PolicyName: 'modav.y' },
+                    { PolicyName: 'modav.z' }
+                ]);
+                mochaDone();
+            })
+            .done();
+    });
+
 });
