@@ -1,5 +1,7 @@
 var Q = require('q');
 
+Q.longStackSupport = true;
+
 var ConsistencyChecker = require('./consistency-checker');
 var IAMCollector = require('./iam-collector');
 var DryRunIAM = require('./dry-run-iam');
@@ -35,35 +37,28 @@ Q.all([ wantedRoles, wantedPolicies, wantedUsers, wantedGroups ])
             .then(IAMCollector.mapAccountAuthorizationDetails);
 
         var policySyncer = Q.all([ config, iam, wantedPolicies, gotMapped ]).spread(PolicyWriter.sync);
+        var roleSyncer = Q.all([ config, iam, wantedRoles, gotMapped ]).spread(RolesWriter.sync);
+        var groupSyncer = Q.all([ config, iam, wantedGroups, gotMapped ]).spread(GroupsWriter.sync);
+        var userSyncer = Q.all([ config, iam, wantedUsers, gotMapped ]).spread(UsersWriter.sync);
+
+        console.log(policySyncer);
+        console.log(roleSyncer);
+        console.log(userSyncer);
+        console.log(groupSyncer);
 
         var doWrites = function () {
             var addPolicies = policySyncer.invoke("doCreatesUpdates");
-            var addRoles = Q(true);
-            var addUsers = Q(true);
-            var addGroups = Q(true);
-//             var addPolicies = Q.all([ iam, wantedPolicies, gotMapped ]).spread(PolicyWriter.doCreateUpdate);
-//             var addRoles = addPolicies.then(function () {
-//                 return Q.all([ iam, wantedRoles, gotMapped ]).spread(RolesWriter.doCreateUpdate);
-//             });
-//             var addGroups = addPolicies.then(function () {
-//                 return Q.all([ iam, wantedGroups, gotMapped ]).spread(GroupsWriter.doCreateUpdate);
-//             });
-//             var addUsers = Q.all([ addPolicies, addGroups ]).then(function () {
-//                 return Q.all([ iam, wantedUsers, gotMapped ]).spread(UsersWriter.doCreateUpdate);
-//             });
-// 
+            var addRoles = addPolicies.then(function () { return roleSyncer.invoke("doCreatesUpdates"); });
+            var addGroups = addPolicies.then(function () { return groupSyncer.invoke("doCreatesUpdates"); });
+            var addUsers = Q.all([ addPolicies, addGroups ]).then(function () { return roleSyncer.invoke("doCreatesUpdates"); });
+
             return Q.all([ addPolicies, addRoles, addGroups, addUsers ]);
         };
 
         var doCleanup = function () {
-            var delUsers = Q(true);
-            var delGroups = Q(true);
-            var delRoles = Q(true);
-//             var delUsers = Q.all([ iam, wantedUsers, gotMapped ]).spread(UsersWriter.doDelete);
-//             var delGroups = delUsers.then(function () {
-//                 return Q.all([ iam, wantedGroups, gotMapped ]).spread(GroupsWriter.doDelete);
-//             });
-//             var delRoles = Q.all([ iam, wantedRoles, gotMapped ]).spread(RolesWriter.doDelete);
+            var delUsers = userSyncer.invoke("doDeletes");
+            var delGroups = delUsers.then(function () { return groupSyncer.invoke("doDeletes"); });
+            var delRoles = roleSyncer.invoke("doDeletes");
             var delPolicies = Q.all([ delRoles, delUsers, delGroups ]).then(function () {
                 return policySyncer.invoke("doDeletes");
             });

@@ -63,6 +63,7 @@ PolicyWriterSyncer.prototype.doUpdate = function (e) {
 
     if (e.want.Path != e.got.Path) {
         console.log("Update requires delete & create", CanonicalJson(e, null, 2));
+        // Might not work, if something is attached to this policy
         return t.doDelete(e.got).then(function () { return t.doCreate(e.want); });
     }
 
