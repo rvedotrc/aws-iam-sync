@@ -33,7 +33,7 @@ Q.all([ wantedRoles, wantedPolicies, wantedUsers, wantedGroups ])
         var policySyncer = Q.all([ iam, wantedPolicies, gotMapped ]).spread(PolicyWriter.sync);
 
         var doWrites = function () {
-            var addPolicies = policySyncer.post("doCreateUpdate");
+            var addPolicies = policySyncer.invoke("doCreatesUpdates");
             var addRoles = Q(true);
             var addUsers = Q(true);
             var addGroups = Q(true);
@@ -61,7 +61,7 @@ Q.all([ wantedRoles, wantedPolicies, wantedUsers, wantedGroups ])
 //             });
 //             var delRoles = Q.all([ iam, wantedRoles, gotMapped ]).spread(RolesWriter.doDelete);
             var delPolicies = Q.all([ delRoles, delUsers, delGroups ]).then(function () {
-                return policySyncer.post("doDelete");
+                return policySyncer.invoke("doDeletes");
             });
 
             return Q.all([ delPolicies, delRoles, delGroups, delUsers ]);

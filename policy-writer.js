@@ -101,33 +101,56 @@ var PolicyWriterSyncer = function (iam, syncOps, gotMapped) {
     };
 };
 
-PolicyWriterSyncer.prototype.doCreateUpdate = function () {
+PolicyWriterSyncer.prototype.doCreate = function (want) {
+    if (!this.isInScope(want)) {
+        throw "Refusing to create out-of-scope policy " + JSON.stringify(want);
+    }
+    console.log("TODO, create policy", CanonicalJson(want, null, 2));
+};
+
+PolicyWriterSyncer.prototype.doCreates = function () {
     var w = this;
     return Q.all(
         w.syncOps.create.map(function (want) {
-            if (!w.isInScope(want)) {
-                throw "Refusing to create out-of-scope policy " + JSON.stringify(want);
-            }
-            console.log("TODO, create policy", CanonicalJson(want, null, 2));
+            return Q(w).invoke("doCreate", want);
         })
-        .concat(
-            w.syncOps.update.map(function (e) {
-                if (!w.isInScope(e.got)) {
-                    throw "Refusing to update out-of-scope policy " + JSON.stringify(e.got);
-                }
-                console.log("TODO, update policy", CanonicalJson(e, null, 2));
-            })
-        )
     );
 };
 
-PolicyWriterSyncer.prototype.doDelete = function () {
+PolicyWriterSyncer.prototype.doUpdate = function (e) {
+    if (!this.isInScope(e.got)) {
+        throw "Refusing to update out-of-scope policy " + JSON.stringify(e.got);
+    }
+    console.log("TODO, update policy", CanonicalJson(e, null, 2));
+};
+
+PolicyWriterSyncer.prototype.doUpdates = function () {
+    var w = this;
+    return Q.all(
+        w.syncOps.update.map(function (e) {
+            return Q(w).invoke("doUpdate", e);
+        })
+    );
+};
+
+PolicyWriterSyncer.prototype.doCreatesUpdates = function () {
+    return Q.all([
+        Q(this).invoke("doCreates"),
+        Q(this).invoke("doUpdates"),
+    ]);
+};
+
+PolicyWriterSyncer.prototype.doDelete = function (got) {
+    if (this.isInScope(got)) {
+        console.log("TODO, delete policy", CanonicalJson(got, null, 2));
+    }
+};
+
+PolicyWriterSyncer.prototype.doDeletes = function () {
     var w = this;
     return Q.all(
         w.syncOps.delete.map(function (got) {
-            if (w.isInScope(got)) {
-                console.log("TODO, delete policy", CanonicalJson(got, null, 2));
-            }
+            return Q(w).invoke("doDelete", got);
         })
     );
 };
