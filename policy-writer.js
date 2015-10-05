@@ -92,7 +92,8 @@ var SyncEngine = require('./sync-engine');
 //     );
 // };
 
-var PolicyWriterSyncer = function (iam, syncOps, gotMapped) {
+var PolicyWriterSyncer = function (config, iam, syncOps, gotMapped) {
+    this.config = config;
     this.iam = iam;
     this.syncOps = syncOps;
     this.gotMapped = gotMapped;
@@ -105,7 +106,9 @@ PolicyWriterSyncer.prototype.doCreate = function (want) {
     if (!this.isInScope(want)) {
         throw "Refusing to create out-of-scope policy " + JSON.stringify(want);
     }
-    console.log("TODO, create policy", CanonicalJson(want, null, 2));
+
+    console.log("Create policy", CanonicalJson(want, null, 2));
+    if (this.config.dryRun) return;
 };
 
 PolicyWriterSyncer.prototype.doCreates = function () {
@@ -121,7 +124,9 @@ PolicyWriterSyncer.prototype.doUpdate = function (e) {
     if (!this.isInScope(e.got)) {
         throw "Refusing to update out-of-scope policy " + JSON.stringify(e.got);
     }
-    console.log("TODO, update policy", CanonicalJson(e, null, 2));
+
+    console.log("Update policy", CanonicalJson(e, null, 2));
+    if (this.config.dryRun) return;
 };
 
 PolicyWriterSyncer.prototype.doUpdates = function () {
@@ -141,9 +146,10 @@ PolicyWriterSyncer.prototype.doCreatesUpdates = function () {
 };
 
 PolicyWriterSyncer.prototype.doDelete = function (got) {
-    if (this.isInScope(got)) {
-        console.log("TODO, delete policy", CanonicalJson(got, null, 2));
-    }
+    if (!this.isInScope(got)) return;
+
+    console.log("Delete policy", CanonicalJson(got, null, 2));
+    if (this.config.dryRun) return;
 };
 
 PolicyWriterSyncer.prototype.doDeletes = function () {
@@ -159,7 +165,7 @@ var findCurrentPolicyVersion = function (p) {
     return p.PolicyVersionList.filter(function (pv) { return pv.IsDefaultVersion; })[0];
 };
 
-var sync = function (iam, wanted, gotMapped) {
+var sync = function (config, iam, wanted, gotMapped) {
     var syncOps = SyncEngine.sync(
         wanted,
         gotMapped.Policies,
@@ -171,7 +177,7 @@ var sync = function (iam, wanted, gotMapped) {
         }
     );
 
-    return new PolicyWriterSyncer(iam, syncOps, gotMapped);
+    return new PolicyWriterSyncer(config, iam, syncOps, gotMapped);
 };
 
 module.exports = {

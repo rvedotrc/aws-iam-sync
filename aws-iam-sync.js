@@ -12,6 +12,8 @@ var UsersWriter = require('./users-writer');
 var GroupsLoader = require('./groups-loader');
 var GroupsWriter = require('./groups-writer');
 
+var config = require('./options-parser').parse(process.argv);
+
 var wantedRoles = Q(true).then(RolesLoader.getWanted);
 var wantedPolicies = Q(true).then(PolicyLoader.getWanted);
 var wantedUsers = Q(true).then(UsersLoader.getWanted);
@@ -24,13 +26,15 @@ Q.all([ wantedRoles, wantedPolicies, wantedUsers, wantedGroups ])
         var iam = Q(true).then(IAMCollector.getIAM);
 
         // Eww, nasty dry run logic!
-        iam = iam.then(function (c) { return DryRunIAM.wrap(c); });
+        if (config.dryRun) {
+            iam = iam.then(function (c) { return DryRunIAM.wrap(c); });
+        }
 
         var gotMapped = iam
             .then(IAMCollector.getAccountAuthorizationDetails)
             .then(IAMCollector.mapAccountAuthorizationDetails);
 
-        var policySyncer = Q.all([ iam, wantedPolicies, gotMapped ]).spread(PolicyWriter.sync);
+        var policySyncer = Q.all([ config, iam, wantedPolicies, gotMapped ]).spread(PolicyWriter.sync);
 
         var doWrites = function () {
             var addPolicies = policySyncer.invoke("doCreatesUpdates");

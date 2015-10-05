@@ -21,6 +21,7 @@
   "dependencies": {
     "aws-sdk": "^2.1.33",
     "canonical-json": "^0.0.4",
+    "commander": "^2.8.1",
     "deep-equal": "^1.0.1",
     "https-proxy-agent": "^0.3.5",
     "merge": "^1.2",
