@@ -48,12 +48,7 @@ PolicyWriterSyncer.prototype.doCreate = function (want) {
 };
 
 PolicyWriterSyncer.prototype.doCreates = function () {
-    var w = this;
-    return Q.all(
-        w.syncOps.create.map(function (want) {
-            return Q(w).invoke("doCreate", want);
-        })
-    );
+    return this.invokeForEach("doCreate", this.syncOps.create);
 };
 
 PolicyWriterSyncer.prototype.doUpdate = function (e) {
@@ -82,12 +77,7 @@ PolicyWriterSyncer.prototype.doUpdate = function (e) {
 };
 
 PolicyWriterSyncer.prototype.doUpdates = function () {
-    var w = this;
-    return Q.all(
-        w.syncOps.update.map(function (e) {
-            return Q(w).invoke("doUpdate", e);
-        })
-    );
+    return this.invokeForEach("doUpdate", this.syncOps.update);
 };
 
 PolicyWriterSyncer.prototype.doCreatesUpdates = function () {
@@ -111,10 +101,14 @@ PolicyWriterSyncer.prototype.doDelete = function (got) {
 };
 
 PolicyWriterSyncer.prototype.doDeletes = function () {
-    var w = this;
+    return this.invokeForEach("doDelete", this.syncOps.delete);
+};
+
+PolicyWriterSyncer.prototype.invokeForEach = function (method, list) {
+    var t = this;
     return Q.all(
-        w.syncOps.delete.map(function (got) {
-            return Q(w).invoke("doDelete", got);
+        list.map(function (e) {
+            return Q(t).invoke(method, e);
         })
     );
 };
