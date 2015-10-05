@@ -7,19 +7,19 @@ var IAMCollector = require('./iam-collector');
 var DryRunIAM = require('./dry-run-iam');
 var PolicyLoader = require('./policy-loader');
 var PolicyWriter = require('./policy-writer');
-var RolesLoader = require('./roles-loader');
-var RolesWriter = require('./roles-writer');
-var UsersLoader = require('./users-loader');
-var UsersWriter = require('./users-writer');
-var GroupsLoader = require('./groups-loader');
-var GroupsWriter = require('./groups-writer');
+var RoleLoader = require('./role-loader');
+var RoleWriter = require('./role-writer');
+var UserLoader = require('./user-loader');
+var UserWriter = require('./user-writer');
+var GroupLoader = require('./group-loader');
+var GroupWriter = require('./group-writer');
 
 var config = require('./options-parser').parse(process.argv);
 
-var wantedRoles = Q(true).then(RolesLoader.getWanted);
+var wantedRoles = Q(true).then(RoleLoader.getWanted);
 var wantedPolicies = Q(true).then(PolicyLoader.getWanted);
-var wantedUsers = Q(true).then(UsersLoader.getWanted);
-var wantedGroups = Q(true).then(GroupsLoader.getWanted);
+var wantedUsers = Q(true).then(UserLoader.getWanted);
+var wantedGroups = Q(true).then(GroupLoader.getWanted);
 
 Q.all([ wantedRoles, wantedPolicies, wantedUsers, wantedGroups ])
     .spread(ConsistencyChecker.checkConsistency)
@@ -37,9 +37,9 @@ Q.all([ wantedRoles, wantedPolicies, wantedUsers, wantedGroups ])
             .then(IAMCollector.mapAccountAuthorizationDetails);
 
         var policySyncer = Q.all([ config, iam, wantedPolicies, gotMapped ]).spread(PolicyWriter.sync);
-        var roleSyncer = Q.all([ config, iam, wantedRoles, gotMapped ]).spread(RolesWriter.sync);
-        var groupSyncer = Q.all([ config, iam, wantedGroups, gotMapped ]).spread(GroupsWriter.sync);
-        var userSyncer = Q.all([ config, iam, wantedUsers, gotMapped ]).spread(UsersWriter.sync);
+        var roleSyncer = Q.all([ config, iam, wantedRoles, gotMapped ]).spread(RoleWriter.sync);
+        var groupSyncer = Q.all([ config, iam, wantedGroups, gotMapped ]).spread(GroupWriter.sync);
+        var userSyncer = Q.all([ config, iam, wantedUsers, gotMapped ]).spread(UserWriter.sync);
 
         console.log(policySyncer);
         console.log(roleSyncer);

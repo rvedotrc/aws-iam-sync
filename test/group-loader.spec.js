@@ -3,10 +3,10 @@ var assert = require('assert');
 var fs = require('fs');
 var sinon = require('sinon');
 
-var GroupsLoader = require('../groups-loader');
-var dir = GroupsLoader.dir;
+var GroupLoader = require('../group-loader');
+var dir = GroupLoader.dir;
 
-describe('GroupsLoader', function () {
+describe('GroupLoader', function () {
 
     var sandbox;
 
@@ -30,7 +30,7 @@ describe('GroupsLoader', function () {
     it('loads from an empty directory', function (mochaDone) {
         givenFiles({});
 
-        GroupsLoader.getWanted()
+        GroupLoader.getWanted()
             .then(function (ans) {
                 assert.deepEqual(ans, []);
                 mochaDone();
@@ -64,7 +64,7 @@ describe('GroupsLoader', function () {
             'a.json': specA
         });
 
-        GroupsLoader.getWanted()
+        GroupLoader.getWanted()
             .then(function (ans) {
                 assert.deepEqual(ans, [expectedA, expectedB]);
                 mochaDone();
@@ -77,7 +77,7 @@ describe('GroupsLoader', function () {
 
         sandbox.stub(fs, "readdir").withArgs(dir).yields(null, ['a.txt', 'some-thing.json']);
 
-        GroupsLoader.getWanted()
+        GroupLoader.getWanted()
             .then(function (ans) {
                 assert.deepEqual(ans, []);
                 mochaDone();
@@ -95,7 +95,7 @@ describe('GroupsLoader', function () {
             ]
         });
 
-        GroupsLoader.getWanted()
+        GroupLoader.getWanted()
             .then(function (ans) {
                 assert.deepEqual(ans[0].attachedManagedPolicies, [
                     { PolicyName: 'modav.x' },
@@ -117,7 +117,7 @@ describe('GroupsLoader', function () {
             ]
         });
 
-        GroupsLoader.getWanted()
+        GroupLoader.getWanted()
             .then(function (ans) {
                 throw 'expected failure';
             }, function (err) {

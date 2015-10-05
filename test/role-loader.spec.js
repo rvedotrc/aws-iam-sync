@@ -3,10 +3,10 @@ var assert = require('assert');
 var fs = require('fs');
 var sinon = require('sinon');
 
-var UsersLoader = require('../users-loader');
-var dir = UsersLoader.dir;
+var RoleLoader = require('../role-loader');
+var dir = RoleLoader.dir;
 
-describe('UsersLoader', function () {
+describe('RoleLoader', function () {
 
     var sandbox;
 
@@ -30,7 +30,7 @@ describe('UsersLoader', function () {
     it('loads from an empty directory', function (mochaDone) {
         givenFiles({});
 
-        UsersLoader.getWanted()
+        RoleLoader.getWanted()
             .then(function (ans) {
                 assert.deepEqual(ans, []);
                 mochaDone();
@@ -38,26 +38,26 @@ describe('UsersLoader', function () {
             .done();
     });
 
-    it('loads users', function (mochaDone) {
+    it('loads roles', function (mochaDone) {
         var specA = [ { name: 'Alice', path: '/team/', policies: [ 'team' ] } ];
         var expectedA = {
-            UserName: "Alice",
+            RoleName: "Alice",
             Path: "/team/",
+            AssumeRolePolicyDocument: RoleLoader.assumeLiveWormhole,
             attachedManagedPolicies: [
                 { PolicyName: 'modav.team' }
             ],
-            groups: [],
             inlinePolicies: [],
         };
 
         var specB = [ { name: 'Bob', path: '/team/', policies: [ 'team' ] } ];
         var expectedB = {
-            UserName: "Bob",
+            RoleName: "Bob",
             Path: "/team/",
+            AssumeRolePolicyDocument: RoleLoader.assumeLiveWormhole,
             attachedManagedPolicies: [
                 { PolicyName: 'modav.team' }
             ],
-            groups: [],
             inlinePolicies: [],
         };
 
@@ -66,7 +66,7 @@ describe('UsersLoader', function () {
             'a.json': specA
         });
 
-        UsersLoader.getWanted()
+        RoleLoader.getWanted()
             .then(function (ans) {
                 assert.deepEqual(ans, [expectedA, expectedB]);
                 mochaDone();
@@ -79,7 +79,7 @@ describe('UsersLoader', function () {
 
         sandbox.stub(fs, "readdir").withArgs(dir).yields(null, ['a.txt', 'some-thing.json']);
 
-        UsersLoader.getWanted()
+        RoleLoader.getWanted()
             .then(function (ans) {
                 assert.deepEqual(ans, []);
                 mochaDone();
@@ -87,7 +87,7 @@ describe('UsersLoader', function () {
             .done();
     });
 
-    it('merges policies for each user', function (mochaDone) {
+    it('merges policies for each role', function (mochaDone) {
         givenFiles({
             'a.json': [
                 { name: 'r1', path: '/p/', policies: [ 'x', 'y' ] }
@@ -97,7 +97,7 @@ describe('UsersLoader', function () {
             ]
         });
 
-        UsersLoader.getWanted()
+        RoleLoader.getWanted()
             .then(function (ans) {
                 assert.deepEqual(ans[0].attachedManagedPolicies, [
                     { PolicyName: 'modav.x' },
@@ -109,29 +109,7 @@ describe('UsersLoader', function () {
             .done();
     });
 
-    it('merges groups for each user', function (mochaDone) {
-        givenFiles({
-            'a.json': [
-                { name: 'r1', path: '/p/', groups: [ 'x', 'y' ] }
-            ],
-            'b.json': [
-                { name: 'r1', path: '/p/', groups: [ 'z', 'x', 'y' ] }
-            ]
-        });
-
-        UsersLoader.getWanted()
-            .then(function (ans) {
-                assert.deepEqual(ans[0].groups, [
-                    { GroupName: 'modav.x' },
-                    { GroupName: 'modav.y' },
-                    { GroupName: 'modav.z' }
-                ]);
-                mochaDone();
-            })
-            .done();
-    });
-
-    it('throws on path conflict for a user', function (mochaDone) {
+    it('throws on path conflict for a role', function (mochaDone) {
         givenFiles({
             'a.json': [
                 { name: 'r1', path: '/p1/', policies: [ 'x', 'y' ] }
@@ -141,7 +119,7 @@ describe('UsersLoader', function () {
             ]
         });
 
-        UsersLoader.getWanted()
+        RoleLoader.getWanted()
             .then(function (ans) {
                 throw 'expected failure';
             }, function (err) {
