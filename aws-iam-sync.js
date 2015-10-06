@@ -41,11 +41,6 @@ Q.all([ wantedRoles, wantedPolicies, wantedUsers, wantedGroups ])
         var groupSyncer = Q.all([ config, iam, wantedGroups, gotMapped ]).spread(GroupWriter.sync);
         var userSyncer = Q.all([ config, iam, wantedUsers, gotMapped ]).spread(UserWriter.sync);
 
-        console.log(policySyncer);
-        console.log(roleSyncer);
-        console.log(userSyncer);
-        console.log(groupSyncer);
-
         var doWrites = function () {
             var addPolicies = policySyncer.invoke("doCreatesUpdates");
             var addRoles = addPolicies.then(function () { return roleSyncer.invoke("doCreatesUpdates"); });

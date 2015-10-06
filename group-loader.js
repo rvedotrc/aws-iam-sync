@@ -52,8 +52,8 @@ var transformItems = function (map) {
         return {
             GroupName: map[k].name,
             Path: map[k].path,
-            attachedManagedPolicies: map[k].policies.map(function (pn) { return { PolicyName: "modav."+pn }; }),
-            inlinePolicies: [],
+            AttachedManagedPolicies: map[k].policies.map(function (pn) { return { PolicyName: "modav."+pn }; }),
+            GroupPolicyList: [],
         };
     });
 };

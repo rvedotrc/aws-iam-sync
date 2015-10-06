@@ -43,20 +43,20 @@ describe('GroupLoader', function () {
         var expectedA = {
             GroupName: "Alice",
             Path: "/team/",
-            attachedManagedPolicies: [
+            AttachedManagedPolicies: [
                 { PolicyName: 'modav.team' }
             ],
-            inlinePolicies: [],
+            GroupPolicyList: [],
         };
 
         var specB = [ { name: 'Bob', path: '/team/', policies: [ 'team' ] } ];
         var expectedB = {
             GroupName: "Bob",
             Path: "/team/",
-            attachedManagedPolicies: [
+            AttachedManagedPolicies: [
                 { PolicyName: 'modav.team' }
             ],
-            inlinePolicies: [],
+            GroupPolicyList: [],
         };
 
         givenFiles({
@@ -97,7 +97,7 @@ describe('GroupLoader', function () {
 
         GroupLoader.getWanted()
             .then(function (ans) {
-                assert.deepEqual(ans[0].attachedManagedPolicies, [
+                assert.deepEqual(ans[0].AttachedManagedPolicies, [
                     { PolicyName: 'modav.x' },
                     { PolicyName: 'modav.y' },
                     { PolicyName: 'modav.z' }

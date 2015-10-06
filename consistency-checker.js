@@ -13,7 +13,7 @@ var checkConsistency = function (roles, policies, users, groups) {
     var badPolicies = {};
     [ roles, users, groups ].map(function (items) {
         items.map(function (i) {
-            i.attachedManagedPolicies.map(function (wantPolicy) {
+            i.AttachedManagedPolicies.map(function (wantPolicy) {
                 if (!policies.some(function (p) { return p.PolicyName === wantPolicy.PolicyName; })) {
                     badPolicies[wantPolicy.PolicyName] = true;
                 }
