@@ -44,10 +44,10 @@ describe('RoleLoader', function () {
             RoleName: "Alice",
             Path: "/team/",
             AssumeRolePolicyDocument: RoleLoader.assumeLiveWormhole,
-            attachedManagedPolicies: [
+            AttachedManagedPolicies: [
                 { PolicyName: 'modav.team' }
             ],
-            inlinePolicies: [],
+            RolePolicyList: [],
         };
 
         var specB = [ { name: 'Bob', path: '/team/', policies: [ 'team' ] } ];
@@ -55,10 +55,10 @@ describe('RoleLoader', function () {
             RoleName: "Bob",
             Path: "/team/",
             AssumeRolePolicyDocument: RoleLoader.assumeLiveWormhole,
-            attachedManagedPolicies: [
+            AttachedManagedPolicies: [
                 { PolicyName: 'modav.team' }
             ],
-            inlinePolicies: [],
+            RolePolicyList: [],
         };
 
         givenFiles({
@@ -99,7 +99,7 @@ describe('RoleLoader', function () {
 
         RoleLoader.getWanted()
             .then(function (ans) {
-                assert.deepEqual(ans[0].attachedManagedPolicies, [
+                assert.deepEqual(ans[0].AttachedManagedPolicies, [
                     { PolicyName: 'modav.x' },
                     { PolicyName: 'modav.y' },
                     { PolicyName: 'modav.z' }

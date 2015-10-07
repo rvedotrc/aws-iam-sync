@@ -43,22 +43,22 @@ describe('UserLoader', function () {
         var expectedA = {
             UserName: "Alice",
             Path: "/team/",
-            attachedManagedPolicies: [
+            AttachedManagedPolicies: [
                 { PolicyName: 'modav.team' }
             ],
-            groups: [],
-            inlinePolicies: [],
+            GroupList: [],
+            UserPolicyList: [],
         };
 
         var specB = [ { name: 'Bob', path: '/team/', policies: [ 'team' ] } ];
         var expectedB = {
             UserName: "Bob",
             Path: "/team/",
-            attachedManagedPolicies: [
+            AttachedManagedPolicies: [
                 { PolicyName: 'modav.team' }
             ],
-            groups: [],
-            inlinePolicies: [],
+            GroupList: [],
+            UserPolicyList: [],
         };
 
         givenFiles({
@@ -99,7 +99,7 @@ describe('UserLoader', function () {
 
         UserLoader.getWanted()
             .then(function (ans) {
-                assert.deepEqual(ans[0].attachedManagedPolicies, [
+                assert.deepEqual(ans[0].AttachedManagedPolicies, [
                     { PolicyName: 'modav.x' },
                     { PolicyName: 'modav.y' },
                     { PolicyName: 'modav.z' }
@@ -121,10 +121,10 @@ describe('UserLoader', function () {
 
         UserLoader.getWanted()
             .then(function (ans) {
-                assert.deepEqual(ans[0].groups, [
-                    { GroupName: 'modav.x' },
-                    { GroupName: 'modav.y' },
-                    { GroupName: 'modav.z' }
+                assert.deepEqual(ans[0].GroupList, [
+                    'modav.x',
+                    'modav.y',
+                    'modav.z'
                 ]);
                 mochaDone();
             })

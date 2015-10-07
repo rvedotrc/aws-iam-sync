@@ -28,9 +28,9 @@ var checkConsistency = function (roles, policies, users, groups) {
     // Check that each group referenced by a user is one that has been defined
     var badGroups = {};
     users.map(function (i) {
-        i.groups.map(function (wantGroup) {
-            if (!groups.some(function (g) { return g.GroupName === wantGroup.GroupName; })) {
-                badGroups[wantGroup.GroupName] = true;
+        i.GroupList.map(function (wantGroup) {
+            if (!groups.some(function (g) { return g.GroupName === wantGroup; })) {
+                badGroups[wantGroup] = true;
             }
         });
     });
