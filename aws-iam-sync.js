@@ -45,7 +45,7 @@ Q.all([ wantedRoles, wantedPolicies, wantedUsers, wantedGroups ])
             var addPolicies = policySyncer.invoke("doCreatesUpdates");
             var addRoles = addPolicies.then(function () { return roleSyncer.invoke("doCreatesUpdates"); });
             var addGroups = addPolicies.then(function () { return groupSyncer.invoke("doCreatesUpdates"); });
-            var addUsers = Q.all([ addPolicies, addGroups ]).then(function () { return roleSyncer.invoke("doCreatesUpdates"); });
+            var addUsers = Q.all([ addPolicies, addGroups ]).then(function () { return userSyncer.invoke("doCreatesUpdates"); });
 
             return Q.all([ addPolicies, addRoles, addGroups, addUsers ]);
         };
