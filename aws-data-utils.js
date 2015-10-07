@@ -42,7 +42,6 @@ var doCollectFromAws = function(nextJob, deferred, client, method, args, paginat
                 RequestKeys: Object.keys(args || {}).sort(),
                 ResponseKeys: Object.keys(data || {}).sort()
             };
-            console.log("apiMeta =", JSON.stringify(apiMeta));
 
             if (paginationHelper) {
                 var nextArgs = paginationHelper.nextArgs(args, data);
