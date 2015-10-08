@@ -5,7 +5,7 @@ var Q = require('q');
 var AwsDataUtils = require('./aws-data-utils');
 var SyncEngine = require('./sync-engine');
 
-var GroupWriterSyncer = function (config, iam, syncOps, gotMapped) {
+var Syncer = function (config, iam, syncOps, gotMapped) {
     this.config = config;
     this.iam = iam;
     this.syncOps = syncOps;
@@ -15,7 +15,7 @@ var GroupWriterSyncer = function (config, iam, syncOps, gotMapped) {
     };
 };
 
-GroupWriterSyncer.prototype.syncInlinePolicies = function (group, want, got, skipDryRun) {
+Syncer.prototype.syncInlinePolicies = function (group, want, got, skipDryRun) {
     var t = this;
     var sync = SyncEngine.sync(
         want,
@@ -60,7 +60,7 @@ GroupWriterSyncer.prototype.syncInlinePolicies = function (group, want, got, ski
     ]);
 };
 
-GroupWriterSyncer.prototype.syncAttachedPolicies = function (group, want, got, skipDryRun) {
+Syncer.prototype.syncAttachedPolicies = function (group, want, got, skipDryRun) {
     var t = this;
     var sync = SyncEngine.sync(
         want,
@@ -100,7 +100,7 @@ GroupWriterSyncer.prototype.syncAttachedPolicies = function (group, want, got, s
     ]);
 };
 
-GroupWriterSyncer.prototype.doCreate = function (want) {
+Syncer.prototype.doCreate = function (want) {
     var t = this;
     if (!this.isInScope(want)) {
         throw "Refusing to create out-of-scope group " + JSON.stringify(want);
@@ -121,11 +121,11 @@ GroupWriterSyncer.prototype.doCreate = function (want) {
     });
 };
 
-GroupWriterSyncer.prototype.doCreates = function () {
+Syncer.prototype.doCreates = function () {
     return this.invokeForEach("doCreate", this.syncOps.create);
 };
 
-GroupWriterSyncer.prototype.doUpdate = function (e) {
+Syncer.prototype.doUpdate = function (e) {
     var t = this;
 
     if (!this.isInScope(e.got)) {
@@ -152,18 +152,18 @@ GroupWriterSyncer.prototype.doUpdate = function (e) {
     });
 };
 
-GroupWriterSyncer.prototype.doUpdates = function () {
+Syncer.prototype.doUpdates = function () {
     return this.invokeForEach("doUpdate", this.syncOps.update);
 };
 
-GroupWriterSyncer.prototype.doCreatesUpdates = function () {
+Syncer.prototype.doCreatesUpdates = function () {
     return Q.all([
         Q(this).invoke("doCreates"),
         Q(this).invoke("doUpdates"),
     ]);
 };
 
-GroupWriterSyncer.prototype.doDelete = function (got) {
+Syncer.prototype.doDelete = function (got) {
     var t = this;
     if (!this.isInScope(got)) return;
 
@@ -176,11 +176,11 @@ GroupWriterSyncer.prototype.doDelete = function (got) {
         });
 };
 
-GroupWriterSyncer.prototype.doDeletes = function () {
+Syncer.prototype.doDeletes = function () {
     return this.invokeForEach("doDelete", this.syncOps.delete);
 };
 
-GroupWriterSyncer.prototype.invokeForEach = function (method, list) {
+Syncer.prototype.invokeForEach = function (method, list) {
     var t = this;
     return Q.all(
         list.map(function (e) {
@@ -218,7 +218,7 @@ var sync = function (config, iam, wanted, gotMapped) {
         }
     );
 
-    return new GroupWriterSyncer(config, iam, syncOps, gotMapped);
+    return new Syncer(config, iam, syncOps, gotMapped);
 };
 
 module.exports = {

@@ -5,7 +5,7 @@ var Q = require('q');
 var AwsDataUtils = require('./aws-data-utils');
 var SyncEngine = require('./sync-engine');
 
-var RoleWriterSyncer = function (config, iam, syncOps, gotMapped) {
+var Syncer = function (config, iam, syncOps, gotMapped) {
     this.config = config;
     this.iam = iam;
     this.syncOps = syncOps;
@@ -15,7 +15,7 @@ var RoleWriterSyncer = function (config, iam, syncOps, gotMapped) {
     };
 };
 
-RoleWriterSyncer.prototype.syncInlinePolicies = function (role, want, got, skipDryRun) {
+Syncer.prototype.syncInlinePolicies = function (role, want, got, skipDryRun) {
     var t = this;
     var sync = SyncEngine.sync(
         want,
@@ -60,7 +60,7 @@ RoleWriterSyncer.prototype.syncInlinePolicies = function (role, want, got, skipD
     ]);
 };
 
-RoleWriterSyncer.prototype.syncAttachedPolicies = function (role, want, got, skipDryRun) {
+Syncer.prototype.syncAttachedPolicies = function (role, want, got, skipDryRun) {
     var t = this;
     var sync = SyncEngine.sync(
         want,
@@ -100,7 +100,7 @@ RoleWriterSyncer.prototype.syncAttachedPolicies = function (role, want, got, ski
     ]);
 };
 
-RoleWriterSyncer.prototype.doCreate = function (want) {
+Syncer.prototype.doCreate = function (want) {
     var t = this;
     if (!this.isInScope(want)) {
         throw "Refusing to create out-of-scope role " + JSON.stringify(want);
@@ -122,11 +122,11 @@ RoleWriterSyncer.prototype.doCreate = function (want) {
     });
 };
 
-RoleWriterSyncer.prototype.doCreates = function () {
+Syncer.prototype.doCreates = function () {
     return this.invokeForEach("doCreate", this.syncOps.create);
 };
 
-RoleWriterSyncer.prototype.doUpdate = function (e) {
+Syncer.prototype.doUpdate = function (e) {
     var t = this;
 
     if (!this.isInScope(e.got)) {
@@ -145,18 +145,18 @@ RoleWriterSyncer.prototype.doUpdate = function (e) {
     ]);
 };
 
-RoleWriterSyncer.prototype.doUpdates = function () {
+Syncer.prototype.doUpdates = function () {
     return this.invokeForEach("doUpdate", this.syncOps.update);
 };
 
-RoleWriterSyncer.prototype.doCreatesUpdates = function () {
+Syncer.prototype.doCreatesUpdates = function () {
     return Q.all([
         Q(this).invoke("doCreates"),
         Q(this).invoke("doUpdates"),
     ]);
 };
 
-RoleWriterSyncer.prototype.doDelete = function (got) {
+Syncer.prototype.doDelete = function (got) {
     var t = this;
     if (!this.isInScope(got)) return;
 
@@ -169,11 +169,11 @@ RoleWriterSyncer.prototype.doDelete = function (got) {
         });
 };
 
-RoleWriterSyncer.prototype.doDeletes = function () {
+Syncer.prototype.doDeletes = function () {
     return this.invokeForEach("doDelete", this.syncOps.delete);
 };
 
-RoleWriterSyncer.prototype.invokeForEach = function (method, list) {
+Syncer.prototype.invokeForEach = function (method, list) {
     var t = this;
     return Q.all(
         list.map(function (e) {
@@ -212,7 +212,7 @@ var sync = function (config, iam, wanted, gotMapped) {
         }
     );
 
-    return new RoleWriterSyncer(config, iam, syncOps, gotMapped);
+    return new Syncer(config, iam, syncOps, gotMapped);
 };
 
 module.exports = {
