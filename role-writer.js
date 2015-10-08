@@ -57,6 +57,8 @@ RoleWriterSyncer.prototype.syncAttachedPolicies = function (role, want, got) {
         function () { return true; } // same name is enough
     );
 
+    if (sync.update.length > 0) throw 'Unexpected updates';
+
     return Q.all([
         Q.all(sync.create.map(function (p) {
             var arn = t.gotMapped.PolicyMap[p.PolicyName].Arn;
@@ -67,12 +69,6 @@ RoleWriterSyncer.prototype.syncAttachedPolicies = function (role, want, got) {
             return AwsDataUtils.collectFromAws(t.iam, "attachRolePolicy", {
                 RoleName: role.RoleName,
                 PolicyArn: arn,
-            });
-        })),
-        Q.all(sync.update.map(function (p) {
-            return AwsDataUtils.collectFromAws(t.iam, "attachRolePolicy", {
-                RoleName: role.RoleName,
-                PolicyArn: t.gotMapped.PolicyMap[p.PolicyName].Arn,
             });
         })),
         Q.all(sync.delete.map(function (p) {

@@ -57,6 +57,8 @@ GroupWriterSyncer.prototype.syncAttachedPolicies = function (group, want, got) {
         function () { return true; } // same name is enough
     );
 
+    if (sync.update.length > 0) throw 'Unexpected updates';
+
     return Q.all([
         Q.all(sync.create.map(function (p) {
             var arn = t.gotMapped.PolicyMap[p.PolicyName].Arn;
@@ -67,12 +69,6 @@ GroupWriterSyncer.prototype.syncAttachedPolicies = function (group, want, got) {
             return AwsDataUtils.collectFromAws(t.iam, "attachGroupPolicy", {
                 GroupName: group.GroupName,
                 PolicyArn: arn,
-            });
-        })),
-        Q.all(sync.update.map(function (p) {
-            return AwsDataUtils.collectFromAws(t.iam, "attachGroupPolicy", {
-                GroupName: group.GroupName,
-                PolicyArn: t.gotMapped.PolicyMap[p.PolicyName].Arn,
             });
         })),
         Q.all(sync.delete.map(function (p) {
