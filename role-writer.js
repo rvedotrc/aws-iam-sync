@@ -120,8 +120,6 @@ RoleWriterSyncer.prototype.doUpdate = function (e) {
     console.log("Update role", CanonicalJson(e, null, 2));
     if (this.config.dryRun) return;
 
-    var base;
-
     if (e.want.Path != e.got.Path || !deepEqual(e.want.AssumeRolePolicyDocument, JSON.parse(decodeURIComponent(e.got.AssumeRolePolicyDocument)))) {
         return t.doDelete(e.got).then(function () { return t.doCreate(e.want); });
     }
