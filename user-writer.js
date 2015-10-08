@@ -15,7 +15,7 @@ var UserWriterSyncer = function (config, iam, syncOps, gotMapped) {
     };
 };
 
-UserWriterSyncer.prototype.syncGroups = function (user, want, got) {
+UserWriterSyncer.prototype.syncGroups = function (user, want, got, skipDryRun) {
     var t = this;
     var sync = SyncEngine.sync(
         want,
@@ -24,12 +24,20 @@ UserWriterSyncer.prototype.syncGroups = function (user, want, got) {
 
     return Q.all([
         Q.all(sync.create.map(function (g) {
+            if (!skipDryRun) {
+                console.log("addUserToGroup", user.UserName, g);
+                if (t.config.dryRun) return;
+            }
             return AwsDataUtils.collectFromAws(t.iam, "addUserToGroup", {
                 UserName: user.UserName,
                 GroupName: g
             });
         })),
-        Q.all(sync.delete.map(function (p) {
+        Q.all(sync.delete.map(function (g) {
+            if (!skipDryRun) {
+                console.log("removeUserFromGroup", user.UserName, g);
+                if (t.config.dryRun) return;
+            }
             return AwsDataUtils.collectFromAws(t.iam, "removeUserFromGroup", {
                 UserName: user.UserName,
                 GroupName: g
@@ -38,7 +46,7 @@ UserWriterSyncer.prototype.syncGroups = function (user, want, got) {
     ]);
 };
 
-UserWriterSyncer.prototype.syncInlinePolicies = function (user, want, got) {
+UserWriterSyncer.prototype.syncInlinePolicies = function (user, want, got, skipDryRun) {
     var t = this;
     var sync = SyncEngine.sync(
         want,
@@ -49,6 +57,10 @@ UserWriterSyncer.prototype.syncInlinePolicies = function (user, want, got) {
 
     return Q.all([
         Q.all(sync.create.map(function (p) {
+            if (!skipDryRun) {
+                console.log("putUserPolicy (create)", user.UserName, p.PolicyName);
+                if (t.config.dryRun) return;
+            }
             return AwsDataUtils.collectFromAws(t.iam, "putUserPolicy", {
                 UserName: user.UserName,
                 PolicyName: p.PolicyName,
@@ -56,6 +68,10 @@ UserWriterSyncer.prototype.syncInlinePolicies = function (user, want, got) {
             });
         })),
         Q.all(sync.update.map(function (p) {
+            if (!skipDryRun) {
+                console.log("putUserPolicy (update)", user.UserName, p.want.PolicyName);
+                if (t.config.dryRun) return;
+            }
             return AwsDataUtils.collectFromAws(t.iam, "putUserPolicy", {
                 UserName: user.UserName,
                 PolicyName: p.want.PolicyName,
@@ -63,6 +79,10 @@ UserWriterSyncer.prototype.syncInlinePolicies = function (user, want, got) {
             });
         })),
         Q.all(sync.delete.map(function (p) {
+            if (!skipDryRun) {
+                console.log("deleteUserPolicy", user.UserName, p.PolicyName);
+                if (t.config.dryRun) return;
+            }
             return AwsDataUtils.collectFromAws(t.iam, "deleteUserPolicy", {
                 UserName: user.UserName,
                 PolicyName: p.PolicyName,
@@ -71,7 +91,7 @@ UserWriterSyncer.prototype.syncInlinePolicies = function (user, want, got) {
     ]);
 };
 
-UserWriterSyncer.prototype.syncAttachedPolicies = function (user, want, got) {
+UserWriterSyncer.prototype.syncAttachedPolicies = function (user, want, got, skipDryRun) {
     var t = this;
     var sync = SyncEngine.sync(
         want,
@@ -89,12 +109,20 @@ UserWriterSyncer.prototype.syncAttachedPolicies = function (user, want, got) {
                 console.log("Failed to find arn of policy", p, "in", t.gotMapped.PolicyMap);
                 throw 'Missing PolicyArn';
             }
+            if (!skipDryRun) {
+                console.log("attachUserPolicy", user.UserName, p.PolicyName);
+                if (t.config.dryRun) return;
+            }
             return AwsDataUtils.collectFromAws(t.iam, "attachUserPolicy", {
                 UserName: user.UserName,
                 PolicyArn: arn,
             });
         })),
         Q.all(sync.delete.map(function (p) {
+            if (!skipDryRun) {
+                console.log("detachUserPolicy", user.UserName, p.PolicyName);
+                if (t.config.dryRun) return;
+            }
             return AwsDataUtils.collectFromAws(t.iam, "detachUserPolicy", {
                 UserName: user.UserName,
                 PolicyArn: p.PolicyArn,
@@ -118,9 +146,9 @@ UserWriterSyncer.prototype.doCreate = function (want) {
     }).then(function (r) {
         t.gotMapped.UserDetailMap[r.User.UserName] = r.User;
         return Q.all([
-            Q(t).invoke("syncGroups", want, want.GroupList, []),
-            Q(t).invoke("syncInlinePolicies", want, want.UserPolicyList, []),
-            Q(t).invoke("syncAttachedPolicies", want, want.AttachedManagedPolicies, [])
+            Q(t).invoke("syncGroups", want, want.GroupList, [], true),
+            Q(t).invoke("syncInlinePolicies", want, want.UserPolicyList, [], true),
+            Q(t).invoke("syncAttachedPolicies", want, want.AttachedManagedPolicies, [], true)
         ]);
     });
 };
@@ -136,18 +164,16 @@ UserWriterSyncer.prototype.doUpdate = function (e) {
         throw "Refusing to update out-of-scope user " + JSON.stringify(e.got);
     }
 
-    console.log("Update user", CanonicalJson(e, null, 2));
-    if (this.config.dryRun) return;
-
-    var base;
+    var base = Q(true);
 
     if (e.want.Path != e.got.Path) {
-        base = AwsDataUtils.collectFromAws(t.iam, "updateUser", {
-            UserName: e.got.UserName,
-            NewPath: e.want.Path,
-        });
-    } else {
-        base = Q(true);
+        console.log("Update user", e.got.UserName, e.got.Path, e.want.Path);
+        if (!t.config.dryRun) {
+            base = AwsDataUtils.collectFromAws(t.iam, "updateUser", {
+                UserName: e.got.UserName,
+                NewPath: e.want.Path,
+            });
+        }
     }
 
     return base.then(function () {
@@ -178,8 +204,8 @@ UserWriterSyncer.prototype.doDelete = function (got) {
     if (this.config.dryRun) return;
 
     return Q.all([
-        this.syncGroups(got, [], got.GroupList),
-        this.syncAttachedPolicies(got, [], got.AttachedManagedPolicies)
+        this.syncGroups(got, [], got.GroupList, true),
+        this.syncAttachedPolicies(got, [], got.AttachedManagedPolicies, true)
     ]).then(function () {
         return AwsDataUtils.collectFromAws(t.iam, "deleteUser", { UserName: got.UserName });
     });

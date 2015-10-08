@@ -15,7 +15,7 @@ var RoleWriterSyncer = function (config, iam, syncOps, gotMapped) {
     };
 };
 
-RoleWriterSyncer.prototype.syncInlinePolicies = function (role, want, got) {
+RoleWriterSyncer.prototype.syncInlinePolicies = function (role, want, got, skipDryRun) {
     var t = this;
     var sync = SyncEngine.sync(
         want,
@@ -26,6 +26,10 @@ RoleWriterSyncer.prototype.syncInlinePolicies = function (role, want, got) {
 
     return Q.all([
         Q.all(sync.create.map(function (p) {
+            if (!skipDryRun) {
+                console.log("putRolePolicy (create)", role.RoleName, p.PolicyName);
+                if (t.config.dryRun) return;
+            }
             return AwsDataUtils.collectFromAws(t.iam, "putRolePolicy", {
                 RoleName: role.RoleName,
                 PolicyName: p.PolicyName,
@@ -33,6 +37,10 @@ RoleWriterSyncer.prototype.syncInlinePolicies = function (role, want, got) {
             });
         })),
         Q.all(sync.update.map(function (p) {
+            if (!skipDryRun) {
+                console.log("putRolePolicy (update)", role.RoleName, p.want.PolicyName);
+                if (t.config.dryRun) return;
+            }
             return AwsDataUtils.collectFromAws(t.iam, "putRolePolicy", {
                 RoleName: role.RoleName,
                 PolicyName: p.want.PolicyName,
@@ -40,6 +48,10 @@ RoleWriterSyncer.prototype.syncInlinePolicies = function (role, want, got) {
             });
         })),
         Q.all(sync.delete.map(function (p) {
+            if (!skipDryRun) {
+                console.log("deleteRolePolicy", role.RoleName, p.PolicyName);
+                if (t.config.dryRun) return;
+            }
             return AwsDataUtils.collectFromAws(t.iam, "deleteRolePolicy", {
                 RoleName: role.RoleName,
                 PolicyName: p.PolicyName,
@@ -48,7 +60,7 @@ RoleWriterSyncer.prototype.syncInlinePolicies = function (role, want, got) {
     ]);
 };
 
-RoleWriterSyncer.prototype.syncAttachedPolicies = function (role, want, got) {
+RoleWriterSyncer.prototype.syncAttachedPolicies = function (role, want, got, skipDryRun) {
     var t = this;
     var sync = SyncEngine.sync(
         want,
@@ -66,12 +78,20 @@ RoleWriterSyncer.prototype.syncAttachedPolicies = function (role, want, got) {
                 console.log("Failed to find arn of policy", p, "in", t.gotMapped.PolicyMap);
                 throw 'Missing PolicyArn';
             }
+            if (!skipDryRun) {
+                console.log("attachRolePolicy", role.RoleName, p.PolicyName);
+                if (t.config.dryRun) return;
+            }
             return AwsDataUtils.collectFromAws(t.iam, "attachRolePolicy", {
                 RoleName: role.RoleName,
                 PolicyArn: arn,
             });
         })),
         Q.all(sync.delete.map(function (p) {
+            if (!skipDryRun) {
+                console.log("detachRolePolicy", role.RoleName, p.PolicyName);
+                if (t.config.dryRun) return;
+            }
             return AwsDataUtils.collectFromAws(t.iam, "detachRolePolicy", {
                 RoleName: role.RoleName,
                 PolicyArn: p.PolicyArn,
@@ -96,8 +116,8 @@ RoleWriterSyncer.prototype.doCreate = function (want) {
     }).then(function (r) {
         t.gotMapped.RoleDetailMap[r.Role.RoleName] = r.Role;
         return Q.all([
-            Q(t).invoke("syncInlinePolicies", want, want.RolePolicyList, []),
-            Q(t).invoke("syncAttachedPolicies", want, want.AttachedManagedPolicies, [])
+            Q(t).invoke("syncInlinePolicies", want, want.RolePolicyList, [], true),
+            Q(t).invoke("syncAttachedPolicies", want, want.AttachedManagedPolicies, [], true)
         ]);
     });
 };
@@ -113,10 +133,9 @@ RoleWriterSyncer.prototype.doUpdate = function (e) {
         throw "Refusing to update out-of-scope role " + JSON.stringify(e.got);
     }
 
-    console.log("Update role", CanonicalJson(e, null, 2));
-    if (this.config.dryRun) return;
-
     if (e.want.Path != e.got.Path || !deepEqual(e.want.AssumeRolePolicyDocument, JSON.parse(decodeURIComponent(e.got.AssumeRolePolicyDocument)))) {
+        console.log("Update role (delete & create)", CanonicalJson(e, null, 2));
+        if (this.config.dryRun) return;
         return t.doDelete(e.got).then(function () { return t.doCreate(e.want); });
     }
 
@@ -144,7 +163,7 @@ RoleWriterSyncer.prototype.doDelete = function (got) {
     console.log("Delete role", CanonicalJson(got, null, 2));
     if (this.config.dryRun) return;
 
-    return this.syncAttachedPolicies(got, [], got.AttachedManagedPolicies)
+    return this.syncAttachedPolicies(got, [], got.AttachedManagedPolicies, true)
         .then(function () {
             return AwsDataUtils.collectFromAws(t.iam, "deleteRole", { RoleName: got.RoleName });
         });

@@ -15,7 +15,7 @@ var GroupWriterSyncer = function (config, iam, syncOps, gotMapped) {
     };
 };
 
-GroupWriterSyncer.prototype.syncInlinePolicies = function (group, want, got) {
+GroupWriterSyncer.prototype.syncInlinePolicies = function (group, want, got, skipDryRun) {
     var t = this;
     var sync = SyncEngine.sync(
         want,
@@ -26,6 +26,10 @@ GroupWriterSyncer.prototype.syncInlinePolicies = function (group, want, got) {
 
     return Q.all([
         Q.all(sync.create.map(function (p) {
+            if (!skipDryRun) {
+                console.log("putGroupPolicy (create)", group.GroupName, p.PolicyName);
+                if (t.config.dryRun) return;
+            }
             return AwsDataUtils.collectFromAws(t.iam, "putGroupPolicy", {
                 GroupName: group.GroupName,
                 PolicyName: p.PolicyName,
@@ -33,6 +37,10 @@ GroupWriterSyncer.prototype.syncInlinePolicies = function (group, want, got) {
             });
         })),
         Q.all(sync.update.map(function (p) {
+            if (!skipDryRun) {
+                console.log("putGroupPolicy (update)", group.GroupName, p.want.PolicyName);
+                if (t.config.dryRun) return;
+            }
             return AwsDataUtils.collectFromAws(t.iam, "putGroupPolicy", {
                 GroupName: group.GroupName,
                 PolicyName: p.want.PolicyName,
@@ -40,6 +48,10 @@ GroupWriterSyncer.prototype.syncInlinePolicies = function (group, want, got) {
             });
         })),
         Q.all(sync.delete.map(function (p) {
+            if (!skipDryRun) {
+                console.log("deleteGroupPolicy", group.GroupName, p.PolicyName);
+                if (t.config.dryRun) return;
+            }
             return AwsDataUtils.collectFromAws(t.iam, "deleteGroupPolicy", {
                 GroupName: group.GroupName,
                 PolicyName: p.PolicyName,
@@ -48,7 +60,7 @@ GroupWriterSyncer.prototype.syncInlinePolicies = function (group, want, got) {
     ]);
 };
 
-GroupWriterSyncer.prototype.syncAttachedPolicies = function (group, want, got) {
+GroupWriterSyncer.prototype.syncAttachedPolicies = function (group, want, got, skipDryRun) {
     var t = this;
     var sync = SyncEngine.sync(
         want,
@@ -66,12 +78,20 @@ GroupWriterSyncer.prototype.syncAttachedPolicies = function (group, want, got) {
                 console.log("Failed to find arn of policy", p, "in", t.gotMapped.PolicyMap);
                 throw 'Missing PolicyArn';
             }
+            if (!skipDryRun) {
+                console.log("attachGroupPolicy", group.GroupName, p.PolicyName);
+                if (t.config.dryRun) return;
+            }
             return AwsDataUtils.collectFromAws(t.iam, "attachGroupPolicy", {
                 GroupName: group.GroupName,
                 PolicyArn: arn,
             });
         })),
         Q.all(sync.delete.map(function (p) {
+            if (!skipDryRun) {
+                console.log("detachGroupPolicy", group.GroupName, p.PolicyName);
+                if (t.config.dryRun) return;
+            }
             return AwsDataUtils.collectFromAws(t.iam, "detachGroupPolicy", {
                 GroupName: group.GroupName,
                 PolicyArn: p.PolicyArn,
@@ -95,8 +115,8 @@ GroupWriterSyncer.prototype.doCreate = function (want) {
     }).then(function (r) {
         t.gotMapped.GroupDetailMap[r.Group.GroupName] = r.Group;
         return Q.all([
-            Q(t).invoke("syncInlinePolicies", want, want.GroupPolicyList, []),
-            Q(t).invoke("syncAttachedPolicies", want, want.AttachedManagedPolicies, [])
+            Q(t).invoke("syncInlinePolicies", want, want.GroupPolicyList, [], true),
+            Q(t).invoke("syncAttachedPolicies", want, want.AttachedManagedPolicies, [], true)
         ]);
     });
 };
@@ -112,18 +132,16 @@ GroupWriterSyncer.prototype.doUpdate = function (e) {
         throw "Refusing to update out-of-scope group " + JSON.stringify(e.got);
     }
 
-    console.log("Update group", CanonicalJson(e, null, 2));
-    if (this.config.dryRun) return;
-
-    var base;
+    var base = Q(true);
 
     if (e.want.Path != e.got.Path) {
-        base = AwsDataUtils.collectFromAws(t.iam, "updateGroup", {
-            GroupName: e.got.GroupName,
-            NewPath: e.want.Path,
-        });
-    } else {
-        base = Q(true);
+        console.log("Update group", e.got.GroupName, e.got.Path, e.want.Path);
+        if (!t.config.dryRun) {
+            base = AwsDataUtils.collectFromAws(t.iam, "updateGroup", {
+                GroupName: e.got.GroupName,
+                NewPath: e.want.Path,
+            });
+        }
     }
 
     return base.then(function () {
@@ -152,7 +170,7 @@ GroupWriterSyncer.prototype.doDelete = function (got) {
     console.log("Delete group", CanonicalJson(got, null, 2));
     if (this.config.dryRun) return;
 
-    return this.syncAttachedPolicies(got, [], got.AttachedManagedPolicies)
+    return this.syncAttachedPolicies(got, [], got.AttachedManagedPolicies, true)
         .then(function () {
             return AwsDataUtils.collectFromAws(t.iam, "deleteGroup", { GroupName: got.GroupName });
         });
