@@ -23,7 +23,18 @@ var getAccountAuthorizationDetails = function (client) {
             };
         }
     };
-    return AwsDataUtils.collectFromAws(client, "getAccountAuthorizationDetails", {}, paginationHelper)
+
+    // Fetch each type in parallel, for speed.
+    // No need to fetch AWSManagedPolicy.
+    var promises = [ "User", "Role", "Group", "LocalManagedPolicy" ].map(function (t) {
+        return AwsDataUtils.collectFromAws(client, "getAccountAuthorizationDetails", {Filter: [t]}, paginationHelper);
+    });
+
+    return Q.all(promises)
+        .spread(function (p1, p2, p3, p4) {
+            var m = paginationHelper.promiseOfJoinedData;
+            return m(p1, m(p2, m(p3, p4)));
+        })
         .then(decodePoliciesForAuthDetails);
 };
 
