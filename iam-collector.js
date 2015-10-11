@@ -23,7 +23,45 @@ var getAccountAuthorizationDetails = function (client) {
             };
         }
     };
-    return AwsDataUtils.collectFromAws(client, "getAccountAuthorizationDetails", {}, paginationHelper);
+    return AwsDataUtils.collectFromAws(client, "getAccountAuthorizationDetails", {}, paginationHelper)
+        .then(decodePoliciesForAuthDetails);
+};
+
+var decodePoliciesForAuthDetails = function (l) {
+    l.GroupDetailList.forEach(function (g) {
+        g.GroupPolicyList.forEach(function (p) {
+            p.PolicyDocument = JSON.parse(decodeURIComponent(p.PolicyDocument));
+        });
+    });
+
+    l.RoleDetailList.forEach(function (r) {
+        r.AssumeRolePolicyDocument = JSON.parse(decodeURIComponent(r.AssumeRolePolicyDocument));
+
+        r.RolePolicyList.forEach(function (p) {
+            p.PolicyDocument = JSON.parse(decodeURIComponent(p.PolicyDocument));
+        });
+
+        r.InstanceProfileList.forEach(function (ip) {
+            // role returned within itself
+            ip.Roles.forEach(function (innerRole) {
+                innerRole.AssumeRolePolicyDocument = JSON.parse(decodeURIComponent(innerRole.AssumeRolePolicyDocument));
+            });
+        });
+    });
+
+    l.UserDetailList.forEach(function (u) {
+        u.UserPolicyList.forEach(function (p) {
+            p.PolicyDocument = JSON.parse(decodeURIComponent(p.PolicyDocument));
+        });
+    });
+
+    l.Policies.forEach(function (p) {
+        p.PolicyVersionList.forEach(function (pv) {
+            pv.Document = JSON.parse(decodeURIComponent(pv.Document));
+        });
+    });
+
+    return l;
 };
 
 var mapListByKey = function (list, key) {

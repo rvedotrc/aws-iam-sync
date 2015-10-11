@@ -5,13 +5,13 @@ var Q = require('q');
 var AwsDataUtils = require('./aws-data-utils');
 var SyncEngine = require('./sync-engine');
 
-var Syncer = function (config, iam, syncOps, gotMapped) {
+var Syncer = function (config, iam, syncOps, gotMapped, scopeChecker) {
     this.config = config;
     this.iam = iam;
     this.syncOps = syncOps;
     this.gotMapped = gotMapped;
     this.isInScope = function (e) {
-        return e.RoleName.match(/^modav\.sync/);
+        return scopeChecker.isRoleInScope(e);
     };
 };
 
@@ -38,7 +38,7 @@ Syncer.prototype.syncInlinePolicies = function (role, want, got, skipDryRun) {
         })),
         Q.all(sync.update.map(function (p) {
             if (!skipDryRun) {
-                console.log("putRolePolicy (update)", role.RoleName, p.want.PolicyName);
+                console.log("putRolePolicy (update)", role.RoleName, p.want.PolicyName, p);
                 if (t.config.dryRun) return;
             }
             return AwsDataUtils.collectFromAws(t.iam, "putRolePolicy", {
@@ -133,7 +133,7 @@ Syncer.prototype.doUpdate = function (e) {
         throw "Refusing to update out-of-scope role " + JSON.stringify(e.got);
     }
 
-    if (e.want.Path != e.got.Path || !deepEqual(e.want.AssumeRolePolicyDocument, JSON.parse(decodeURIComponent(e.got.AssumeRolePolicyDocument)))) {
+    if (e.want.Path != e.got.Path || !deepEqual(e.want.AssumeRolePolicyDocument, e.got.AssumeRolePolicyDocument)) {
         console.log("Update role (delete & create)", CanonicalJson(e, null, 2));
         if (this.config.dryRun) return;
         return t.doDelete(e.got).then(function () { return t.doCreate(e.want); });
@@ -192,15 +192,15 @@ var sortByPolicyName = function (l) {
     return l.sort(compareByPolicyName);
 };
 
-var sync = function (config, iam, wanted, gotMapped) {
+var sync = function (config, iam, wanted, gotMapped, scopeChecker) {
     var syncOps = SyncEngine.sync(
-        wanted,
+        wanted.RoleDetailList,
         gotMapped.RoleDetailList,
         function (e) { return e.RoleName; },
         function (w, g) {
             return w.RoleName === g.RoleName &&
                 w.Path === g.Path &&
-                deepEqual(w.AssumeRolePolicyDocument, JSON.parse(decodeURIComponent(g.AssumeRolePolicyDocument))) &&
+                deepEqual(w.AssumeRolePolicyDocument, g.AssumeRolePolicyDocument) &&
                 deepEqual(
                     w.AttachedManagedPolicies.map(function (p) { return p.PolicyName; }).sort(),
                     g.AttachedManagedPolicies.map(function (p) { return p.PolicyName; }).sort()
@@ -212,7 +212,7 @@ var sync = function (config, iam, wanted, gotMapped) {
         }
     );
 
-    return new Syncer(config, iam, syncOps, gotMapped);
+    return new Syncer(config, iam, syncOps, gotMapped, scopeChecker);
 };
 
 module.exports = {

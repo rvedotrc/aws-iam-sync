@@ -5,13 +5,13 @@ var Q = require('q');
 var AwsDataUtils = require('./aws-data-utils');
 var SyncEngine = require('./sync-engine');
 
-var PolicyWriterSyncer = function (config, iam, syncOps, gotMapped) {
+var PolicyWriterSyncer = function (config, iam, syncOps, gotMapped, scopeChecker) {
     this.config = config;
     this.iam = iam;
     this.syncOps = syncOps;
     this.gotMapped = gotMapped;
     this.isInScope = function (e) {
-        return e.PolicyName.match(/^modav\./);
+        return scopeChecker.isPolicyInScope(e);
     };
 };
 
@@ -118,19 +118,19 @@ var findCurrentPolicyVersion = function (p) {
     return p.PolicyVersionList.filter(function (pv) { return pv.IsDefaultVersion; })[0];
 };
 
-var sync = function (config, iam, wanted, gotMapped) {
+var sync = function (config, iam, wanted, gotMapped, scopeChecker) {
     var syncOps = SyncEngine.sync(
-        wanted,
+        wanted.Policies,
         gotMapped.Policies,
         function (e) { return e.PolicyName; },
         function (w, g) {
             return w.PolicyName === g.PolicyName &&
                 w.Path === g.Path &&
-                deepEqual(w.PolicyDocument, JSON.parse(decodeURIComponent(findCurrentPolicyVersion(g).Document)));
+                deepEqual(w.PolicyDocument, findCurrentPolicyVersion(g).Document);
         }
     );
 
-    return new PolicyWriterSyncer(config, iam, syncOps, gotMapped);
+    return new PolicyWriterSyncer(config, iam, syncOps, gotMapped, scopeChecker);
 };
 
 module.exports = {

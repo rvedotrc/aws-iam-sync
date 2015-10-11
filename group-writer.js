@@ -5,13 +5,13 @@ var Q = require('q');
 var AwsDataUtils = require('./aws-data-utils');
 var SyncEngine = require('./sync-engine');
 
-var Syncer = function (config, iam, syncOps, gotMapped) {
+var Syncer = function (config, iam, syncOps, gotMapped, scopeChecker) {
     this.config = config;
     this.iam = iam;
     this.syncOps = syncOps;
     this.gotMapped = gotMapped;
     this.isInScope = function (e) {
-        return e.GroupName.match(/^modav\.sync/);
+        return scopeChecker.isGroupInScope(e);
     };
 };
 
@@ -199,9 +199,9 @@ var sortByPolicyName = function (l) {
     return l.sort(compareByPolicyName);
 };
 
-var sync = function (config, iam, wanted, gotMapped) {
+var sync = function (config, iam, wanted, gotMapped, scopeChecker) {
     var syncOps = SyncEngine.sync(
-        wanted,
+        wanted.GroupDetailList,
         gotMapped.GroupDetailList,
         function (e) { return e.GroupName; },
         function (w, g) {
@@ -218,7 +218,7 @@ var sync = function (config, iam, wanted, gotMapped) {
         }
     );
 
-    return new Syncer(config, iam, syncOps, gotMapped);
+    return new Syncer(config, iam, syncOps, gotMapped, scopeChecker);
 };
 
 module.exports = {

@@ -121,12 +121,3 @@ exports.tidyResponseMetadata = function (data) {
     return data;
 };
 
-exports.decodeJsonInline = function (key) {
-    return function (data) {
-        if (data[key] !== null && data[key] !== undefined) {
-            data[key] = JSON.parse(data[key]);
-        }
-        return data;
-    };
-};
-

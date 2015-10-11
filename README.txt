@@ -30,3 +30,4 @@ Found entities that match the predicate that aren't wanted will be deleted.
 
 Create in the above order; delete in reverse order.
 
+node --use-strict aws-iam-sync.js -w ./path/to/wanted.json -s ./path/to/scope.js [-n]
