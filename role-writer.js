@@ -38,7 +38,9 @@ Syncer.prototype.syncInlinePolicies = function (role, want, got, skipDryRun) {
         })),
         Q.all(sync.update.map(function (p) {
             if (!skipDryRun) {
-                console.log("putRolePolicy (update)", role.RoleName, p.want.PolicyName, p);
+                console.log("putRolePolicy (update)", role.RoleName, p.want.PolicyName);
+                console.log("  got:  " + JSON.stringify(p.got));
+                console.log("  want: " + JSON.stringify(p.want));
                 if (t.config.dryRun) return;
             }
             return AwsDataUtils.collectFromAws(t.iam, "putRolePolicy", {
