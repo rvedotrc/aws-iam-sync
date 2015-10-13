@@ -40,7 +40,7 @@ var wrap = function (realIAM) {
 
     Object.keys(realPrototype).map(function (m) {
         if (typeof(realPrototype[m]) === 'function' && !m.match (/^(get|list)/)) {
-            console.log("nobbling method", m, "of type", typeof(realPrototype[m]));
+            // console.log("nobbling method", m, "of type", typeof(realPrototype[m]));
             realPrototype[m] = makeNoopFor(m);
         }
     });
