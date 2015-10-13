@@ -35,7 +35,10 @@ PolicyWriterSyncer.prototype.doCreate = function (want) {
     }
 
     console.log("Create policy", CanonicalJson(want, null, 2));
-    if (this.config.dryRun) return;
+    if (this.config.dryRun) {
+        t.gotMapped.PolicyMap[want.PolicyName] = { Arn: 'dummy' };
+        return;
+    }
 
     return AwsDataUtils.collectFromAws(this.iam, "createPolicy", {
         PolicyName: want.PolicyName,
