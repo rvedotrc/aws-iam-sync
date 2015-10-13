@@ -165,7 +165,10 @@ Syncer.prototype.doDelete = function (got) {
     console.log("Delete role", CanonicalJson(got, null, 2));
     if (this.config.dryRun) return;
 
-    return this.syncAttachedPolicies(got, [], got.AttachedManagedPolicies, true)
+    return Q.all([
+        this.syncAttachedPolicies(got, [], got.AttachedManagedPolicies, true),
+        this.syncInlinePolicies(got, [], got.RolePolicyList, true),
+    ])
         .then(function () {
             return AwsDataUtils.collectFromAws(t.iam, "deleteRole", { RoleName: got.RoleName });
         });

@@ -207,7 +207,8 @@ Syncer.prototype.doDelete = function (got) {
 
     return Q.all([
         this.syncGroups(got, [], got.GroupList, true),
-        this.syncAttachedPolicies(got, [], got.AttachedManagedPolicies, true)
+        this.syncAttachedPolicies(got, [], got.AttachedManagedPolicies, true),
+        this.syncInlinePolicies(got, [], got.UserPolicyList, true),
     ]).then(function () {
         return AwsDataUtils.collectFromAws(t.iam, "deleteUser", { UserName: got.UserName });
     });

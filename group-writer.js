@@ -172,7 +172,10 @@ Syncer.prototype.doDelete = function (got) {
     console.log("Delete group", CanonicalJson(got, null, 2));
     if (this.config.dryRun) return;
 
-    return this.syncAttachedPolicies(got, [], got.AttachedManagedPolicies, true)
+    return Q.all([
+        this.syncAttachedPolicies(got, [], got.AttachedManagedPolicies, true),
+        this.syncInlinePolicies(got, [], got.GroupPolicyList, true),
+    ])
         .then(function () {
             return AwsDataUtils.collectFromAws(t.iam, "deleteGroup", { GroupName: got.GroupName });
         });
