@@ -4,6 +4,7 @@ Q.longStackSupport = true;
 
 var ConsistencyChecker = require('./consistency-checker');
 var IAMCollector = require('./iam-collector');
+var GotFinder = require('./got-finder');
 var DryRunIAM = require('./dry-run-iam');
 var PolicyWriter = require('./policy-writer');
 var RoleWriter = require('./role-writer');
@@ -25,9 +26,7 @@ Q.all([ wantedData, scopeChecker ])
             iam = iam.then(function (c) { return DryRunIAM.wrap(c); });
         }
 
-        var gotData = iam
-            .then(IAMCollector.getAccountAuthorizationDetails)
-            .then(IAMCollector.mapAccountAuthorizationDetails);
+        var gotData = Q.all([ config, iam ]).spread(GotFinder.find);
 
         var policySyncer = Q.all([ config, iam, wantedData, gotData, scopeChecker ]).spread(PolicyWriter.sync);
         var roleSyncer = Q.all([ config, iam, wantedData, gotData, scopeChecker ]).spread(RoleWriter.sync);
