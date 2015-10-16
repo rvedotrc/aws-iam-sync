@@ -1,4 +1,3 @@
-var CanonicalJson = require('canonical-json');
 
 var checkMissingKeys = function (d, label, requiredKeys) {
     var missingKeys = requiredKeys.filter(function (k) {

@@ -1,3 +1,4 @@
+var CanonicalJson = require('canonical-json');
 var Q = require('q');
 var fs = require('fs');
 
@@ -19,7 +20,7 @@ var find = function (config, iam) {
     if (config.saveState) {
         gotData = gotData.then(function (d) {
             var tmpName = config.saveState + ".tmp";
-            return Q.nfcall(fs.writeFile, tmpName, JSON.stringify(d), { flag: 'w' })
+            return Q.nfcall(fs.writeFile, tmpName, CanonicalJson(d, null, 2)+"\n", { flag: 'w' })
                 .then(function () { return Q.nfcall(fs.rename, tmpName, config.saveState); })
                 .then(function () {
                     console.log("loaded state from IAM and saved to", config.saveState);
