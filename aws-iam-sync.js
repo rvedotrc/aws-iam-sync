@@ -15,6 +15,17 @@ var config = require('./options-parser').parse(process.argv);
 var wantedData = require(config.wantedFile);
 var scopeChecker = require(config.scopeFile);
 
+(function () {
+    // e.g. https_proxy=http://host:3128
+    var https_proxy = process.env.https_proxy;
+    if (https_proxy) {
+        var AWS = require('aws-sdk');
+        var proxy = require('https-proxy-agent');
+        if (!AWS.config.httpOptions) AWS.config.httpOptions = {};
+        AWS.config.httpOptions.agent = proxy(https_proxy);
+    }
+})();
+
 Q.all([ wantedData, scopeChecker ])
     .spread(ConsistencyChecker.checkConsistency)
     .then(function () {
