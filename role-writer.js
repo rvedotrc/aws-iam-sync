@@ -57,7 +57,7 @@ Syncer.prototype.syncInlinePolicies = function (role, want, got, skipDryRun) {
             return AwsDataUtils.collectFromAws(t.iam, "deleteRolePolicy", {
                 RoleName: role.RoleName,
                 PolicyName: p.PolicyName,
-            });
+            }).fail(AwsDataUtils.swallowError('NoSuchEntity'));
         })),
     ]);
 };
@@ -97,7 +97,7 @@ Syncer.prototype.syncAttachedPolicies = function (role, want, got, skipDryRun) {
             return AwsDataUtils.collectFromAws(t.iam, "detachRolePolicy", {
                 RoleName: role.RoleName,
                 PolicyArn: p.PolicyArn,
-            });
+            }).fail(AwsDataUtils.swallowError('NoSuchEntity'));
         })),
     ]);
 };
@@ -170,7 +170,8 @@ Syncer.prototype.doDelete = function (got) {
         this.syncInlinePolicies(got, [], got.RolePolicyList, true),
     ])
         .then(function () {
-            return AwsDataUtils.collectFromAws(t.iam, "deleteRole", { RoleName: got.RoleName });
+            return AwsDataUtils.collectFromAws(t.iam, "deleteRole", { RoleName: got.RoleName })
+                .fail(AwsDataUtils.swallowError('NoSuchEntity'));
         });
 };
 

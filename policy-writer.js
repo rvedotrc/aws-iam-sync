@@ -22,7 +22,8 @@ PolicyWriterSyncer.prototype.deleteAllInactivePolicyVersions = function (gotPoli
             return !pv.IsDefaultVersion;
         }).map(function (pv) {
             return Q.all([ gotPolicy.Arn, pv.VersionId ]).spread(function (arn, versionId) {
-                return AwsDataUtils.collectFromAws(t.iam, "deletePolicyVersion", { PolicyArn: arn, VersionId: versionId });
+                return AwsDataUtils.collectFromAws(t.iam, "deletePolicyVersion", { PolicyArn: arn, VersionId: versionId })
+                    .fail(AwsDataUtils.swallowError('NoSuchEntity'));
             });
         })
     );
@@ -100,7 +101,8 @@ PolicyWriterSyncer.prototype.doDelete = function (got) {
 
     return this.deleteAllInactivePolicyVersions(got)
         .then(function () {
-            return AwsDataUtils.collectFromAws(t.iam, "deletePolicy", { PolicyArn: got.Arn });
+            return AwsDataUtils.collectFromAws(t.iam, "deletePolicy", { PolicyArn: got.Arn })
+                .fail(AwsDataUtils.swallowError('NoSuchEntity'));
         });
 };
 

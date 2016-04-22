@@ -57,7 +57,7 @@ Syncer.prototype.syncInlinePolicies = function (group, want, got, skipDryRun) {
             return AwsDataUtils.collectFromAws(t.iam, "deleteGroupPolicy", {
                 GroupName: group.GroupName,
                 PolicyName: p.PolicyName,
-            });
+            }).fail(AwsDataUtils.swallowError('NoSuchEntity'));
         })),
     ]);
 };
@@ -97,7 +97,7 @@ Syncer.prototype.syncAttachedPolicies = function (group, want, got, skipDryRun) 
             return AwsDataUtils.collectFromAws(t.iam, "detachGroupPolicy", {
                 GroupName: group.GroupName,
                 PolicyArn: p.PolicyArn,
-            });
+            }).fail(AwsDataUtils.swallowError('NoSuchEntity'));
         })),
     ]);
 };
@@ -177,7 +177,8 @@ Syncer.prototype.doDelete = function (got) {
         this.syncInlinePolicies(got, [], got.GroupPolicyList, true),
     ])
         .then(function () {
-            return AwsDataUtils.collectFromAws(t.iam, "deleteGroup", { GroupName: got.GroupName });
+            return AwsDataUtils.collectFromAws(t.iam, "deleteGroup", { GroupName: got.GroupName })
+                .fail(AwsDataUtils.swallowError('NoSuchEntity'));
         });
 };
 

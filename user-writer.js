@@ -88,7 +88,7 @@ Syncer.prototype.syncInlinePolicies = function (user, want, got, skipDryRun) {
             return AwsDataUtils.collectFromAws(t.iam, "deleteUserPolicy", {
                 UserName: user.UserName,
                 PolicyName: p.PolicyName,
-            });
+            }).fail(AwsDataUtils.swallowError('NoSuchEntity'));
         })),
     ]);
 };
@@ -128,7 +128,7 @@ Syncer.prototype.syncAttachedPolicies = function (user, want, got, skipDryRun) {
             return AwsDataUtils.collectFromAws(t.iam, "detachUserPolicy", {
                 UserName: user.UserName,
                 PolicyArn: p.PolicyArn,
-            });
+            }).fail(AwsDataUtils.swallowError('NoSuchEntity'));
         })),
     ]);
 };
@@ -209,8 +209,10 @@ Syncer.prototype.doDelete = function (got) {
         this.syncGroups(got, [], got.GroupList, true),
         this.syncAttachedPolicies(got, [], got.AttachedManagedPolicies, true),
         this.syncInlinePolicies(got, [], got.UserPolicyList, true),
-    ]).then(function () {
-        return AwsDataUtils.collectFromAws(t.iam, "deleteUser", { UserName: got.UserName });
+    ])
+    .then(function () {
+        return AwsDataUtils.collectFromAws(t.iam, "deleteUser", { UserName: got.UserName })
+            .fail(AwsDataUtils.swallowError('NoSuchEntity'));
     });
 };
 

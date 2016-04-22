@@ -76,6 +76,13 @@ var doCollectFromAws = function(nextJob, deferred, client, method, args, paginat
     client[method].apply(client, [args, cb]);
 };
 
+exports.swallowError = function (code) {
+    return function (e) {
+        if (e.code === code) return;
+        throw e;
+    };
+};
+
 // How long to wait on Throttling errors.  Used for testing.
 exports.getDelay = function () {
     return 1000 + Math.random() * 5000;
