@@ -198,6 +198,25 @@ Syncer.prototype.doCreatesUpdates = function () {
     ]);
 };
 
+Syncer.prototype.deleteCredentials = function (got) {
+    var t = this;
+
+    var deleteAccessKeys = AwsDataUtils.collectFromAws(t.iam, "listAccessKeys", { UserName: got.UserName })
+        .then(function (r) {
+            return Q.all(
+                r.AccessKeyMetadata.map(function (m) {
+                    return AwsDataUtils.collectFromAws(t.iam, "deleteAccessKey", { UserName: m.UserName, AccessKeyId: m.AccessKeyId });
+                })
+            );
+        }, AwsDataUtils.swallowError('NoSuchEntity'));
+
+    // TODO other access methods
+    return deleteAccessKeys;
+
+    // FIXME: it takes a few seconds after a "delete" for the "deleteConflict" error not to happen.
+    // So even once this promise is done, deleting a user may still fail.
+};
+
 Syncer.prototype.doDelete = function (got) {
     var t = this;
     if (!this.isInScope(got)) return;
@@ -210,6 +229,7 @@ Syncer.prototype.doDelete = function (got) {
         this.syncAttachedPolicies(got, [], got.AttachedManagedPolicies, true),
         this.syncInlinePolicies(got, [], got.UserPolicyList, true),
     ])
+    .then(this.deleteCredentials(got))
     .then(function () {
         return AwsDataUtils.collectFromAws(t.iam, "deleteUser", { UserName: got.UserName })
             .fail(AwsDataUtils.swallowError('NoSuchEntity'));
