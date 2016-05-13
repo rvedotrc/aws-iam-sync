@@ -108,7 +108,7 @@ Syncer.prototype.doCreate = function (want) {
         throw "Refusing to create out-of-scope role " + JSON.stringify(want);
     }
 
-    console.log("Create role", CanonicalJson(want, null, 2));
+    console.log("Create role", want.RoleName, CanonicalJson(want, null, 2));
     if (this.config.dryRun) return;
 
     return AwsDataUtils.collectFromAws(this.iam, "createRole", {
@@ -136,7 +136,7 @@ Syncer.prototype.doUpdate = function (e) {
     }
 
     if (e.want.Path != e.got.Path || !deepEqual(e.want.AssumeRolePolicyDocument, e.got.AssumeRolePolicyDocument)) {
-        console.log("Update role (delete & create)", CanonicalJson(e, null, 2));
+        console.log("Update role (delete & create)", e.got.RoleName, CanonicalJson(e, null, 2));
         if (this.config.dryRun) return;
         return t.doDelete(e.got).then(function () { return t.doCreate(e.want); });
     }
@@ -162,7 +162,7 @@ Syncer.prototype.doDelete = function (got) {
     var t = this;
     if (!this.isInScope(got)) return;
 
-    console.log("Delete role", CanonicalJson(got, null, 2));
+    console.log("Delete role", got.RoleName, CanonicalJson(got, null, 2));
     if (this.config.dryRun) return;
 
     return Q.all([

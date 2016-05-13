@@ -108,7 +108,7 @@ Syncer.prototype.doCreate = function (want) {
         throw "Refusing to create out-of-scope group " + JSON.stringify(want);
     }
 
-    console.log("Create group", CanonicalJson(want, null, 2));
+    console.log("Create group", want.GroupName, CanonicalJson(want, null, 2));
     if (this.config.dryRun) return;
 
     return AwsDataUtils.collectFromAws(this.iam, "createGroup", {
@@ -169,7 +169,7 @@ Syncer.prototype.doDelete = function (got) {
     var t = this;
     if (!this.isInScope(got)) return;
 
-    console.log("Delete group", CanonicalJson(got, null, 2));
+    console.log("Delete group", got.GroupName, CanonicalJson(got, null, 2));
     if (this.config.dryRun) return;
 
     return Q.all([

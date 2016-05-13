@@ -35,7 +35,7 @@ PolicyWriterSyncer.prototype.doCreate = function (want) {
         throw "Refusing to create out-of-scope policy " + JSON.stringify(want);
     }
 
-    console.log("Create policy", CanonicalJson(want, null, 2));
+    console.log("Create policy", want.PolicyName, CanonicalJson(want, null, 2));
     if (this.config.dryRun) {
         t.gotMapped.PolicyMap[want.PolicyName] = { Arn: 'dummy' };
         return;
@@ -62,7 +62,7 @@ PolicyWriterSyncer.prototype.doUpdate = function (e) {
         throw "Refusing to update out-of-scope policy " + JSON.stringify(e.got);
     }
 
-    console.log("Update policy", CanonicalJson(e, null, 2));
+    console.log("Update policy", e.got.PolicyName, CanonicalJson(e, null, 2));
     if (this.config.dryRun) return;
 
     if (e.want.Path != e.got.Path) {
@@ -96,7 +96,7 @@ PolicyWriterSyncer.prototype.doDelete = function (got) {
     var t = this;
     if (!this.isInScope(got)) return;
 
-    console.log("Delete policy", CanonicalJson(got, null, 2));
+    console.log("Delete policy", got.PolicyName, CanonicalJson(got, null, 2));
     if (this.config.dryRun) return;
 
     return this.deleteAllInactivePolicyVersions(got)

@@ -139,7 +139,7 @@ Syncer.prototype.doCreate = function (want) {
         throw "Refusing to create out-of-scope user " + JSON.stringify(want);
     }
 
-    console.log("Create user", CanonicalJson(want, null, 2));
+    console.log("Create user", want.UserName, CanonicalJson(want, null, 2));
     if (this.config.dryRun) return;
 
     return AwsDataUtils.collectFromAws(this.iam, "createUser", {
@@ -221,7 +221,7 @@ Syncer.prototype.doDelete = function (got) {
     var t = this;
     if (!this.isInScope(got)) return;
 
-    console.log("Delete user", CanonicalJson(got, null, 2));
+    console.log("Delete user", got.UserName, CanonicalJson(got, null, 2));
     if (this.config.dryRun) return;
 
     return Q.all([
