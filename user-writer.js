@@ -210,8 +210,39 @@ Syncer.prototype.deleteCredentials = function (got) {
             );
         }, AwsDataUtils.swallowError('NoSuchEntity'));
 
+    var deleteLoginProfile = AwsDataUtils.collectFromAws(t.iam, "deleteLoginProfile", { UserName: got.UserName })
+        .fail(AwsDataUtils.swallowError('NoSuchEntity'));
+
+    var deactivateMFADevices = AwsDataUtils.collectFromAws(t.iam, "listMFADevices", { UserName: got.UserName })
+        .then(function (r) {
+            return Q.all(
+                r.MFADevices.map(function (mfa) {
+                    // mfa.UserName, mfa.SerialNumber, mfa.EnableDate
+                    return AwsDataUtils.collectFromAws(t.iam, "deactivateMFADevice", { UserName: mfa.UserName, SerialNumber: mfa.SerialNumber })
+                        .then(function (v) {
+                            return AwsDataUtils.collectFromAws(t.iam, "deleteVirtualMFADevice", { SerialNumber: mfa.SerialNumber });
+                        });
+                })
+            );
+        });
+
+    var deleteSSHPublicKeys = AwsDataUtils.collectFromAws(t.iam, "listSSHPublicKeys", { UserName: got.UserName })
+        .then(function (r) {
+            return Q.all(
+                r.SSHPublicKeys.map(function (ssh) {
+                    // ssh.UserName, ssh.SSHPublicKeyId, // ssh.Status, ssh.UploadDate
+                    return AwsDataUtils.collectFromAws(t.iam, "deleteSSHPublicKey", { UserName: ssh.UserName, SSHPublicKeyId: ssh.SSHPublicKeyId });
+                })
+            );
+        });
+
     // TODO other access methods
-    return deleteAccessKeys;
+    return Q.all([
+        deleteAccessKeys,
+        deleteLoginProfile,
+        deactivateMFADevices,
+        deleteSSHPublicKeys,
+    ]);
 
     // FIXME: it takes a few seconds after a "delete" for the "deleteConflict" error not to happen.
     // So even once this promise is done, deleting a user may still fail.
