@@ -202,9 +202,9 @@ var sync = function (config, iam, wanted, gotMapped, scopeChecker) {
     var syncOps = SyncEngine.sync(
         wanted.RoleDetailList,
         gotMapped.RoleDetailList,
-        function (e) { return e.RoleName; },
+        function (e) { return e.RoleName.toUpperCase(); },
         function (w, g) {
-            return w.RoleName === g.RoleName &&
+            return w.RoleName.toUpperCase() === g.RoleName.toUpperCase() &&
                 w.Path === g.Path &&
                 deepEqual(w.AssumeRolePolicyDocument, g.AssumeRolePolicyDocument) &&
                 deepEqual(
