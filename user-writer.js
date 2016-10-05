@@ -294,9 +294,9 @@ var sync = function (config, iam, wanted, gotMapped, scopeChecker) {
     var syncOps = SyncEngine.sync(
         wanted.UserDetailList,
         gotMapped.UserDetailList,
-        function (e) { return e.UserName; },
+        function (e) { return e.UserName.toUpperCase(); },
         function (w, g) {
-            return w.UserName === g.UserName &&
+            return w.UserName.toUpperCase() === g.UserName.toUpperCase() &&
                 w.Path === g.Path &&
                 deepEqual(
                     w.GroupList.sort(),
