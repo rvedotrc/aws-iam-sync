@@ -23,7 +23,7 @@
     "canonical-json": "^0.0.4",
     "commander": "^2.8.1",
     "deep-equal": "^1.0.1",
-    "https-proxy-agent": "^0.3.5",
+    "https-proxy-agent": "^5.0.0",
     "merge": "^1.2",
     "q": "^1.4.1",
     "uniq": "^1.0.1"
